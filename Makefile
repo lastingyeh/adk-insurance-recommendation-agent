@@ -580,17 +580,18 @@ eval:
 	uv run adk eval ./app $${EVALSET:-tests/eval/evalsets/basic.evalset.json} \
 		$(if $(EVAL_CONFIG),--config_file_path=$(EVAL_CONFIG),$(if $(wildcard tests/eval/eval_config.json),--config_file_path=tests/eval/eval_config.json,))
 
-eval-all:
+eval-all: ## 依序安全地執行所有評估套件
 	@echo "==============================================================================="
-	@echo "| Running All Evalsets                                                        |"
+	@echo "| Running All Evalsets (Sequential & Safe)                                    |"
 	@echo "==============================================================================="
-	@for evalset in tests/eval/evalsets/*.evalset.json; do \
-		echo ""; \
-		echo "▶ Running: $$evalset"; \
-		$(MAKE) eval EVALSET=$$evalset || exit 1; \
-	done
+	$(MAKE) eval EVALSET=tests/eval/evalsets/basic.evalset.json
+	$(MAKE) eval-core
+	$(MAKE) eval-extended
+	$(MAKE) eval-safety
+	$(MAKE) eval-session-aware
+	$(MAKE) eval-live
 	@echo ""
-	@echo "✅ All evalsets completed"
+	@echo "✅ All evalsets completed successfully!"
 
 lint:
 	uv sync --dev --extra lint --frozen
