@@ -95,7 +95,8 @@ record() 寫入：
 verify_chain() 驗證：
   scripts/verify_audit_chain.py / make audit-verify
     └─ rows := SELECT * ORDER BY chain_index ASC
-       逐筆：重算 HMAC 比對 + prev_hash 連結 + chain_index 連續性
+       逐筆：重算 HMAC 比對（tampered）+ prev_hash 連結（broken_link，涵蓋刪除中間筆）
+       （chain_index 僅用於排序，不以斷號判定刪除——見 §2 對 BIGSERIAL 跳號的說明）
        → ChainVerificationResult
 ```
 
