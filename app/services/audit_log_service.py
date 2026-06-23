@@ -62,9 +62,13 @@ class AuditLogService:
               created_at TEXT NOT NULL,
               retention_until TEXT,
               prev_hash TEXT,
-              event_hash TEXT NOT NULL
+              event_hash TEXT NOT NULL,
+              chain_index BIGSERIAL
             )
             """)
+            await conn.execute(
+                "ALTER TABLE audit_events ADD COLUMN IF NOT EXISTS chain_index BIGSERIAL"
+            )
         finally:
             await conn.close()
 

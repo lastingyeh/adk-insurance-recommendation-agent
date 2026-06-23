@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS audit_events (
   retention_until TEXT,
 
   prev_hash TEXT,
-  event_hash TEXT NOT NULL
+  event_hash TEXT NOT NULL,
+  chain_index BIGSERIAL
 );
 
 CREATE INDEX IF NOT EXISTS idx_audit_trace_id

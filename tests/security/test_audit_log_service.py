@@ -1,7 +1,55 @@
+import hashlib
+import hmac
 import json
+
 import asyncpg
 import pytest
-from app.services.audit_log_service import AuditContext, AuditLogService
+
+from app.services.audit_log_service import (
+    AuditContext,
+    AuditLogService,
+)
+
+
+async def _clean(db_url: str) -> None:
+    url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = await asyncpg.connect(url)
+    await conn.execute("DELETE FROM audit_events")
+    await conn.close()
+
+
+def _ctx(n: int = 1) -> AuditContext:
+    return AuditContext(
+        trace_id=f"trace-{n}",
+        request_id=f"req-{n}",
+        session_id=f"session-{n}",
+        user_id=f"user-{n}",
+    )
+
+
+@pytest.mark.asyncio
+async def test_record_assigns_increasing_chain_index(postgres_container):
+    db_url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
+    service = AuditLogService(
+        db_url=db_url, hash_salt="test-salt", retention_days=365, enabled=True
+    )
+    await service.initialize()
+    await _clean(db_url)
+
+    await service.record(context=_ctx(1), event_type="e1", actor="user", sequence=1)
+    await service.record(context=_ctx(2), event_type="e2", actor="user", sequence=2)
+
+    clean_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = await asyncpg.connect(clean_url)
+    try:
+        rows = await conn.fetch(
+            "SELECT chain_index FROM audit_events ORDER BY chain_index ASC"
+        )
+    finally:
+        await conn.close()
+
+    assert len(rows) == 2
+    assert rows[0]["chain_index"] < rows[1]["chain_index"]
 
 
 @pytest.mark.asyncio
