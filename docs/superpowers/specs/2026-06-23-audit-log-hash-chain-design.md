@@ -40,7 +40,9 @@ README 宣稱稽核日誌具備「SHA-256 雜湊鏈鏈結的防篡改」「一�
 
   `hash_material` 維持現有 JSON 序列化（`sort_keys=True, ensure_ascii=False`）內容不變，僅雜湊演算法由 `hashlib.sha256` 改為 `hmac.new(key, msg, sha256)`。
 - `stable_hash()`（用於 session_id / user_id 去識別化）維持原樣，不在本次範圍。
-- **啟動警告**：於服務初始化（`AuditLogService.initialize()` 或 `app/api/main.py` 啟動流程）偵測，若 `audit_enabled` 為真且 `hash_salt` 等於預設值 `"dev-only-change-me"`，輸出醒目 `logger.warning`，提示正式環境必須設定 `AUDIT_HASH_SALT`。不中止啟動（demo 友善）。
+- **啟動警告**：於服務初始化（`AuditLogService.initialize()` 或 `app/api/main.py` 啟動流程）偵測，若 `audit_enabled` 為真且 `hash_salt` 屬於不安全占位值，輸出醒目 `logger.warning`，提示正式環境必須設定 `AUDIT_HASH_SALT`。不中止啟動（demo 友善）。
+  - **占位值偵測**：目前 salt 在三處有不一致的預設值——`.env.example` 與 `docker-compose.yml` 為 `change-me-in-production`，`app/config.py` 的程式 fallback 為 `dev-only-change-me`。警告判定須涵蓋全部，採用：salt 為空、或（不分大小寫）包含 `change-me` / `changeme` / `dev-only` 子字串即視為占位值。
+  - **三處對齊**：將 `app/config.py` 的程式 fallback 統一為 `change-me-in-production`，與 `.env.example`、`docker-compose.yml` 一致，消除「跑起來用的值」與「警告檢查的值」不同步的根源。
 
 ### 2. DB 取 prev_hash + 序列化寫入（補破口 2、3）
 
@@ -124,7 +126,7 @@ verify_chain() 驗證：
 
 - `app/services/audit_log_service.py` — HMAC、移除 `_last_hash`、transaction + advisory lock + DB 取 prev_hash、`verify_chain()`、`ChainVerificationResult`、啟動警告。
 - `db/audit_schema.sql` — 新增 `chain_index BIGSERIAL`。
-- `app/config.py` — （視需要）預設金鑰偵測輔助；其餘設定已存在。
+- `app/config.py` — 將 `audit_hash_salt` 程式 fallback 由 `dev-only-change-me` 統一為 `change-me-in-production`（對齊 `.env.example` 與 `docker-compose.yml`）。
 - `scripts/verify_audit_chain.py` — 新增驗證腳本。
 - `Makefile` — 新增 `audit-verify` target。
 - `tests/security/test_audit_log_service.py` — 新增上述測試案例。
