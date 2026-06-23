@@ -4,6 +4,7 @@ import asyncpg
 import hashlib
 import hmac
 import json
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -11,8 +12,15 @@ from typing import Any
 
 from app.security.pii import redact_jsonable, stable_hash
 
+logger = logging.getLogger(__name__)
+
 # pg_advisory_xact_lock 的固定鍵，序列化雜湊鏈的 append（"AUDT" 的 ASCII）
 _CHAIN_LOCK_KEY = 0x41554454
+
+
+def _is_placeholder_salt(salt: str) -> bool:
+    s = (salt or "").strip().lower()
+    return (not s) or any(p in s for p in ("change-me", "changeme", "dev-only"))
 
 
 @dataclass(frozen=True)
@@ -99,6 +107,12 @@ class AuditLogService:
     async def initialize(self) -> None:
         if not self._enabled:
             return
+
+        if _is_placeholder_salt(self._hash_salt):
+            logger.warning(
+                "[AUDIT] AUDIT_HASH_SALT 仍為占位值，雜湊鏈可被偽造；"
+                "正式環境請以 `openssl rand -base64 32` 產生並設定 AUDIT_HASH_SALT。"
+            )
 
         conn = await asyncpg.connect(self._db_url)
         try:

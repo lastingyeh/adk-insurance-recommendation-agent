@@ -9,6 +9,7 @@ from app.services.audit_log_service import (
     AuditContext,
     AuditLogService,
     ChainVerificationResult,
+    _is_placeholder_salt,
 )
 
 
@@ -307,3 +308,26 @@ async def test_verify_chain_fails_with_wrong_key(postgres_container):
     result = await wrong.verify_chain()
     assert result.ok is False
     assert result.reason == "tampered"
+
+
+def test_is_placeholder_salt_covers_known_defaults():
+    assert _is_placeholder_salt("change-me-in-production") is True
+    assert _is_placeholder_salt("dev-only-change-me") is True
+    assert _is_placeholder_salt("CHANGE-ME") is True
+    assert _is_placeholder_salt("") is True
+    assert _is_placeholder_salt("   ") is True
+    assert _is_placeholder_salt("a-real-random-secret-9f3b") is False
+
+
+@pytest.mark.asyncio
+async def test_initialize_warns_on_placeholder_salt(postgres_container, caplog):
+    import logging
+
+    db_url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
+    svc = AuditLogService(
+        db_url=db_url, hash_salt="change-me-in-production", retention_days=365, enabled=True
+    )
+    with caplog.at_level(logging.WARNING):
+        await svc.initialize()
+
+    assert any("AUDIT_HASH_SALT" in r.message for r in caplog.records)

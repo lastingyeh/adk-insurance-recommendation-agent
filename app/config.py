@@ -123,7 +123,7 @@ def load_runtime_config() -> AppRuntimeConfig:
             "AUDIT_DB_PATH", "postgresql+asyncpg://user:password@localhost:5432/audit"
         ),
         audit_retention_days=int(os.getenv("AUDIT_RETENTION_DAYS", "365")),
-        audit_hash_salt=os.getenv("AUDIT_HASH_SALT", "dev-only-change-me"),
+        audit_hash_salt=os.getenv("AUDIT_HASH_SALT", "change-me-in-production"),
         pii_redaction_enabled=_parse_bool_env("PII_REDACTION_ENABLED", True),
         max_output_tokens=int(os.getenv("MAX_OUTPUT_TOKENS", "2048")),
         enable_cloud_tracing=_parse_bool_env("ENABLE_CLOUD_TRACING", False),
