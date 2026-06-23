@@ -23,6 +23,14 @@ class AuditContext:
     user_id: str
 
 
+@dataclass(frozen=True)
+class ChainVerificationResult:
+    ok: bool
+    checked_count: int
+    broken_chain_index: int | None = None
+    reason: str | None = None  # "tampered" | "broken_link" | None
+
+
 class AuditLogService:
     def __init__(
         self,
@@ -122,6 +130,56 @@ class AuditLogService:
             )
         finally:
             await conn.close()
+
+    async def verify_chain(self) -> ChainVerificationResult:
+        conn = await asyncpg.connect(self._db_url)
+        try:
+            rows = await conn.fetch(
+                "SELECT chain_index, id, trace_id, request_id, session_id_hash, "
+                "user_id_hash, event_type, actor, tool_name, sequence, "
+                "input_redacted, output_redacted, pii_findings, policy_decision, "
+                "created_at, prev_hash, event_hash "
+                "FROM audit_events ORDER BY chain_index ASC"
+            )
+        finally:
+            await conn.close()
+
+        expected_prev: str | None = None
+        for row in rows:
+            material = self._build_hash_material(
+                event_id=row["id"],
+                trace_id=row["trace_id"],
+                request_id=row["request_id"],
+                session_id_hash=row["session_id_hash"],
+                user_id_hash=row["user_id_hash"],
+                event_type=row["event_type"],
+                actor=row["actor"],
+                tool_name=row["tool_name"],
+                sequence=row["sequence"],
+                input_redacted=row["input_redacted"],
+                output_redacted=row["output_redacted"],
+                pii_findings=json.loads(row["pii_findings"]),
+                policy_decision=row["policy_decision"],
+                prev_hash=row["prev_hash"],
+                created_at=row["created_at"],
+            )
+            if self._compute_event_hash(material) != row["event_hash"]:
+                return ChainVerificationResult(
+                    ok=False,
+                    checked_count=len(rows),
+                    broken_chain_index=row["chain_index"],
+                    reason="tampered",
+                )
+            if row["prev_hash"] != expected_prev:
+                return ChainVerificationResult(
+                    ok=False,
+                    checked_count=len(rows),
+                    broken_chain_index=row["chain_index"],
+                    reason="broken_link",
+                )
+            expected_prev = row["event_hash"]
+
+        return ChainVerificationResult(ok=True, checked_count=len(rows))
 
     async def record(
         self,

@@ -8,6 +8,7 @@ import pytest
 from app.services.audit_log_service import (
     AuditContext,
     AuditLogService,
+    ChainVerificationResult,
 )
 
 
@@ -228,3 +229,81 @@ async def test_prev_hash_links_across_service_instances(postgres_container):
     assert rows[1]["prev_hash"] == rows[0]["event_hash"]
     # 關鍵：重啟後新實例仍接續 DB 最後一筆，而非寫成 None
     assert rows[2]["prev_hash"] == rows[1]["event_hash"]
+
+
+@pytest.mark.asyncio
+async def test_verify_chain_ok_for_intact_chain(postgres_container):
+    db_url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
+    svc = AuditLogService(db_url=db_url, hash_salt="k", retention_days=365, enabled=True)
+    await svc.initialize()
+    await _clean(db_url)
+    for i in range(1, 4):
+        await svc.record(context=_ctx(i), event_type=f"e{i}", actor="user", sequence=i)
+
+    result = await svc.verify_chain()
+    assert result.ok is True
+    assert result.checked_count == 3
+    assert result.broken_chain_index is None
+
+
+@pytest.mark.asyncio
+async def test_verify_chain_detects_tampering(postgres_container):
+    db_url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
+    svc = AuditLogService(db_url=db_url, hash_salt="k", retention_days=365, enabled=True)
+    await svc.initialize()
+    await _clean(db_url)
+    for i in range(1, 4):
+        await svc.record(context=_ctx(i), event_type=f"e{i}", actor="user", sequence=i)
+
+    clean_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = await asyncpg.connect(clean_url)
+    try:
+        await conn.execute(
+            "UPDATE audit_events SET input_redacted = 'tampered' "
+            "WHERE chain_index = (SELECT MIN(chain_index) + 1 FROM audit_events)"
+        )
+    finally:
+        await conn.close()
+
+    result = await svc.verify_chain()
+    assert result.ok is False
+    assert result.reason == "tampered"
+
+
+@pytest.mark.asyncio
+async def test_verify_chain_detects_deletion(postgres_container):
+    db_url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
+    svc = AuditLogService(db_url=db_url, hash_salt="k", retention_days=365, enabled=True)
+    await svc.initialize()
+    await _clean(db_url)
+    for i in range(1, 4):
+        await svc.record(context=_ctx(i), event_type=f"e{i}", actor="user", sequence=i)
+
+    clean_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = await asyncpg.connect(clean_url)
+    try:
+        await conn.execute(
+            "DELETE FROM audit_events "
+            "WHERE chain_index = (SELECT MIN(chain_index) + 1 FROM audit_events)"
+        )
+    finally:
+        await conn.close()
+
+    result = await svc.verify_chain()
+    assert result.ok is False
+    assert result.reason == "broken_link"
+
+
+@pytest.mark.asyncio
+async def test_verify_chain_fails_with_wrong_key(postgres_container):
+    db_url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
+    svc = AuditLogService(db_url=db_url, hash_salt="right-key", retention_days=365, enabled=True)
+    await svc.initialize()
+    await _clean(db_url)
+    for i in range(1, 4):
+        await svc.record(context=_ctx(i), event_type=f"e{i}", actor="user", sequence=i)
+
+    wrong = AuditLogService(db_url=db_url, hash_salt="wrong-key", retention_days=365, enabled=True)
+    result = await wrong.verify_chain()
+    assert result.ok is False
+    assert result.reason == "tampered"
