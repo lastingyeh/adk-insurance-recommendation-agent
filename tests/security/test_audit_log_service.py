@@ -190,3 +190,41 @@ async def test_audit_log_writes_event_hash_chain(postgres_container):
         assert rows[1]["event_hash"]
     finally:
         await conn.close()
+
+
+async def _fetch_chain(db_url: str):
+    clean_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
+    conn = await asyncpg.connect(clean_url)
+    try:
+        return await conn.fetch(
+            "SELECT chain_index, prev_hash, event_hash FROM audit_events "
+            "ORDER BY chain_index ASC"
+        )
+    finally:
+        await conn.close()
+
+
+@pytest.mark.asyncio
+async def test_prev_hash_links_across_service_instances(postgres_container):
+    db_url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
+    svc_a = AuditLogService(
+        db_url=db_url, hash_salt="test-salt", retention_days=365, enabled=True
+    )
+    await svc_a.initialize()
+    await _clean(db_url)
+
+    await svc_a.record(context=_ctx(1), event_type="e1", actor="user", sequence=1)
+    await svc_a.record(context=_ctx(2), event_type="e2", actor="user", sequence=2)
+
+    # 模擬服務重啟：全新實例，無記憶體 _last_hash
+    svc_b = AuditLogService(
+        db_url=db_url, hash_salt="test-salt", retention_days=365, enabled=True
+    )
+    await svc_b.record(context=_ctx(3), event_type="e3", actor="user", sequence=3)
+
+    rows = await _fetch_chain(db_url)
+    assert len(rows) == 3
+    assert rows[0]["prev_hash"] is None
+    assert rows[1]["prev_hash"] == rows[0]["event_hash"]
+    # 關鍵：重啟後新實例仍接續 DB 最後一筆，而非寫成 None
+    assert rows[2]["prev_hash"] == rows[1]["event_hash"]

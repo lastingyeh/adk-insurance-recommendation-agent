@@ -11,6 +11,9 @@ from typing import Any
 
 from app.security.pii import redact_jsonable, stable_hash
 
+# pg_advisory_xact_lock 的固定鍵，序列化雜湊鏈的 append（"AUDT" 的 ASCII）
+_CHAIN_LOCK_KEY = 0x41554454
+
 
 @dataclass(frozen=True)
 class AuditContext:
@@ -36,7 +39,6 @@ class AuditLogService:
         self._hash_salt = hash_salt
         self._retention_days = retention_days
         self._enabled = enabled
-        self._last_hash: str | None = None
 
     @staticmethod
     def _build_hash_material(
@@ -149,59 +151,66 @@ class AuditLogService:
         user_id_hash = stable_hash(context.user_id, salt=self._hash_salt)
 
         event_id = str(uuid.uuid4())
-        prev_hash = self._last_hash
-
-        hash_material = self._build_hash_material(
-            event_id=event_id,
-            trace_id=context.trace_id,
-            request_id=context.request_id,
-            session_id_hash=session_id_hash,
-            user_id_hash=user_id_hash,
-            event_type=event_type,
-            actor=actor,
-            tool_name=tool_name,
-            sequence=sequence,
-            input_redacted=input_redacted,
-            output_redacted=output_redacted,
-            pii_findings=pii_findings,
-            policy_decision=policy_decision,
-            prev_hash=prev_hash,
-            created_at=now.isoformat(),
-        )
-        event_hash = self._compute_event_hash(hash_material)
-        self._last_hash = event_hash
 
         conn = await asyncpg.connect(self._db_url)
         try:
-            await conn.execute(
-                """
-                INSERT INTO audit_events (
-                  id, trace_id, request_id, session_id_hash, user_id_hash,
-                  event_type, actor, tool_name, sequence,
-                  input_redacted, output_redacted, pii_findings,
-                  policy_decision, event_timestamp, created_at,
-                  retention_until, prev_hash, event_hash
+            async with conn.transaction():
+                # 序列化鏈的 append，避免並發產生分叉
+                await conn.execute(
+                    "SELECT pg_advisory_xact_lock($1)", _CHAIN_LOCK_KEY
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
-                """,
-                event_id,
-                context.trace_id,
-                context.request_id,
-                session_id_hash,
-                user_id_hash,
-                event_type,
-                actor,
-                tool_name,
-                sequence,
-                input_redacted,
-                output_redacted,
-                json.dumps(pii_findings, ensure_ascii=False),
-                policy_decision,
-                now.isoformat(),
-                now.isoformat(),
-                retention_until.isoformat(),
-                prev_hash,
-                event_hash,
-            )
+                # 從 DB 取真正的最後一筆（重啟/多副本都正確），而非記憶體狀態
+                prev_hash = await conn.fetchval(
+                    "SELECT event_hash FROM audit_events "
+                    "ORDER BY chain_index DESC LIMIT 1"
+                )
+                hash_material = self._build_hash_material(
+                    event_id=event_id,
+                    trace_id=context.trace_id,
+                    request_id=context.request_id,
+                    session_id_hash=session_id_hash,
+                    user_id_hash=user_id_hash,
+                    event_type=event_type,
+                    actor=actor,
+                    tool_name=tool_name,
+                    sequence=sequence,
+                    input_redacted=input_redacted,
+                    output_redacted=output_redacted,
+                    pii_findings=pii_findings,
+                    policy_decision=policy_decision,
+                    prev_hash=prev_hash,
+                    created_at=now.isoformat(),
+                )
+                event_hash = self._compute_event_hash(hash_material)
+                await conn.execute(
+                    """
+                    INSERT INTO audit_events (
+                      id, trace_id, request_id, session_id_hash, user_id_hash,
+                      event_type, actor, tool_name, sequence,
+                      input_redacted, output_redacted, pii_findings,
+                      policy_decision, event_timestamp, created_at,
+                      retention_until, prev_hash, event_hash
+                    )
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+                    """,
+                    event_id,
+                    context.trace_id,
+                    context.request_id,
+                    session_id_hash,
+                    user_id_hash,
+                    event_type,
+                    actor,
+                    tool_name,
+                    sequence,
+                    input_redacted,
+                    output_redacted,
+                    json.dumps(pii_findings, ensure_ascii=False),
+                    policy_decision,
+                    now.isoformat(),
+                    now.isoformat(),
+                    retention_until.isoformat(),
+                    prev_hash,
+                    event_hash,
+                )
         finally:
             await conn.close()
