@@ -116,6 +116,20 @@ async def test_audit_log_redacts_pii_before_insert(postgres_container):
         await conn.close()
 
 
+def test_compute_event_hash_uses_hmac_not_bare_sha256():
+    service = AuditLogService(
+        db_url="postgresql+asyncpg://x", hash_salt="my-key", retention_days=1, enabled=True
+    )
+    material = '{"a":1}'
+    expected_hmac = hmac.new(b"my-key", material.encode("utf-8"), hashlib.sha256).hexdigest()
+    bare_sha = hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+    result = service._compute_event_hash(material)
+
+    assert result == expected_hmac
+    assert result != bare_sha
+
+
 @pytest.mark.asyncio
 async def test_audit_log_writes_event_hash_chain(postgres_container):
     db_url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
