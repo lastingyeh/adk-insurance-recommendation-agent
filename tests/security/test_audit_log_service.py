@@ -331,3 +331,19 @@ async def test_initialize_warns_on_placeholder_salt(postgres_container, caplog):
         await svc.initialize()
 
     assert any("AUDIT_HASH_SALT" in r.message for r in caplog.records)
+
+
+@pytest.mark.asyncio
+async def test_run_verification_returns_result(postgres_container):
+    from scripts.verify_audit_chain import run_verification
+
+    db_url = postgres_container.get_connection_url().replace("psycopg2", "asyncpg")
+    svc = AuditLogService(db_url=db_url, hash_salt="k", retention_days=365, enabled=True)
+    await svc.initialize()
+    await _clean(db_url)
+    for i in range(1, 3):
+        await svc.record(context=_ctx(i), event_type=f"e{i}", actor="user", sequence=i)
+
+    result = await run_verification(svc)
+    assert result.ok is True
+    assert result.checked_count == 2

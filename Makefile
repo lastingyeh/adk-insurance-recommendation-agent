@@ -13,7 +13,7 @@ endif
 	run-web run-api run-cli run-fastapi debug-fastapi \
 	ui-install ui-dev ui-build \
 	_kill-adk-port _kill-fastapi-port _kill-ui-port _kill-port \
-	check test-api test-security test-audit \
+	check test-api test-security test-audit audit-verify \
 	tf-bootstrap tf-bootstrap-destroy tf-init tf-plan tf-apply tf-destroy tf-db-password \
 	tf-gen-config build-push env-check-gcp gcp-db-proxy gcp-db-init-info gcp-db-setup \
 	gcp-bootstrap gcp-cleanup-orphans gcp-deploy gcp-traffic-list gcp-rollback \
@@ -277,6 +277,9 @@ test-security:
 
 test-audit:
 	$(PYTHON) -m pytest tests/security/test_audit_log_service.py tests/api/test_run_audit_integration.py -q
+
+audit-verify: ## 驗證稽核日誌雜湊鏈完整性（偵測竄改/刪除）
+	uv run python -m scripts.verify_audit_chain
 
 # ─── 雲端部署 (Terraform) ──────────────────────────────────
 
