@@ -78,7 +78,11 @@ export interface ProductExtractorAPI {
   ingestAdkEvent: (event: {
     content?: { parts?: any[] };
   }) => void;
-  ingestAgentMessage: (params: { id: string; text: string }) => void;
+  ingestAgentMessage: (params: {
+    id: string;
+    text: string;
+    status?: string;
+  }) => void;
 }
 
 interface InsuranceRecommendationBlock {
@@ -306,11 +310,27 @@ export function useProductExtractor(): ProductExtractorAPI {
     setProductsByMessage({});
   }, []);
 
+  // agent 漏吐 / 吐壞推薦 JSON 時的 fallback 來源：
+  // 它一定會呼叫 save_last_recommendation（帶商品名），記下來供 ingestAgentMessage 保底。
+  const lastSavedRef = useRef<{ name: string; id: string } | null>(null);
+
   const ingestSseTimelineEvent = useCallback<
     ProductExtractorAPI['ingestSseTimelineEvent']
   >(
     (event) => {
-      if (event.kind !== 'tool-result' || !event.title) return;
+      if (!event.title) return;
+      if (/save_last_recommendation/.test(event.title)) {
+        const raw = parseSseToolResultPayload(event.payload);
+        if (raw && typeof raw === 'object') {
+          const o = raw as Record<string, unknown>;
+          const name = typeof o.product_name === 'string' ? o.product_name : '';
+          if (name) {
+            lastSavedRef.current = { name, id: String(o.product_id ?? name) };
+          }
+        }
+        return;
+      }
+      if (event.kind !== 'tool-result') return;
       const toolName = event.title.replace(/\s+result$/, '');
       if (!PRODUCT_SEARCH_TOOLS.has(toolName)) return;
       const raw = parseSseToolResultPayload(event.payload);
@@ -337,23 +357,50 @@ export function useProductExtractor(): ProductExtractorAPI {
   const ingestAgentMessage = useCallback<
     ProductExtractorAPI['ingestAgentMessage']
   >(
-    ({ id, text }) => {
+    ({ id, text, status }) => {
       const blocks = extractRecommendationBlocks(text);
-      if (blocks.length === 0) return;
-      const previousCount = seenMessagesRef.current.get(id) ?? 0;
-      if (blocks.length === previousCount) return;
-      const fresh = blocks
-        .slice(previousCount)
-        .map((block, idx) =>
-          recommendationToProduct(block, id, previousCount + idx),
-        )
-        .filter((p): p is Product => Boolean(p));
-      seenMessagesRef.current.set(id, blocks.length);
-      if (fresh.length > 0) {
-        merge(fresh);
+      if (blocks.length > 0) {
+        lastSavedRef.current = null; // 有可解析的推薦 JSON，不需 fallback
+        const previousCount = seenMessagesRef.current.get(id) ?? 0;
+        if (blocks.length === previousCount) return;
+        const fresh = blocks
+          .slice(previousCount)
+          .map((block, idx) =>
+            recommendationToProduct(block, id, previousCount + idx),
+          )
+          .filter((p): p is Product => Boolean(p));
+        seenMessagesRef.current.set(id, blocks.length);
+        if (fresh.length > 0) {
+          merge(fresh);
+          setProductsByMessage((prev) => ({
+            ...prev,
+            [id]: [...(prev[id] ?? []), ...fresh],
+          }));
+        }
+        return;
+      }
+
+      // 沒有可解析的推薦 JSON（漏吐或格式壞）：串流結束時用 save_last_recommendation 保底，
+      // 至少讓右側顯示被推薦的商品名，不再空白。
+      if (
+        status === 'final' &&
+        lastSavedRef.current &&
+        !seenMessagesRef.current.has(id)
+      ) {
+        const saved = lastSavedRef.current;
+        lastSavedRef.current = null;
+        seenMessagesRef.current.set(id, 1);
+        const product: Product = {
+          product_id: saved.id,
+          product_name: saved.name,
+          product_type: inferProductType(saved.name),
+          reason: '顧問已為您推薦此方案，詳細內容請參考左側對話說明。',
+          source_tool: 'save_last_recommendation',
+        };
+        merge([product]);
         setProductsByMessage((prev) => ({
           ...prev,
-          [id]: [...(prev[id] ?? []), ...fresh],
+          [id]: [...(prev[id] ?? []), product],
         }));
       }
     },
