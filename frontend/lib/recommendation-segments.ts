@@ -2,7 +2,8 @@ import type { InsuranceRecommendationData } from '../components/InsuranceCard';
 
 export type MessageSegment =
   | { type: 'markdown'; text: string }
-  | { type: 'card'; data: InsuranceRecommendationData };
+  | { type: 'card'; data: InsuranceRecommendationData }
+  | { type: 'card-loading' };
 
 const REC_TOKEN = '"insurance_recommendation"';
 
@@ -80,7 +81,17 @@ export function splitRecommendationSegments(text: string): MessageSegment[] {
     }
 
     const end = findJsonObjectEnd(normalized, start);
-    if (end === -1) break; // incomplete object (e.g. mid-stream) — stop here
+    if (end === -1) {
+      // 推薦 JSON 未閉合（串流中或被截斷）：隱藏不完整 JSON，改放卡片佔位。
+      let spanStart = start;
+      const fenceBefore = text.slice(cursor, spanStart).match(FENCE_BEFORE);
+      if (fenceBefore) spanStart -= fenceBefore[0].length;
+      const gap = text.slice(cursor, spanStart).trim();
+      if (gap) segments.push({ type: 'markdown', text: gap });
+      segments.push({ type: 'card-loading' });
+      cursor = text.length;
+      break;
+    }
 
     let parsed: InsuranceRecommendationData | null = null;
     try {

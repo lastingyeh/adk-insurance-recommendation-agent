@@ -29,6 +29,7 @@ import {
   pruneSessionHistory,
   removeSessionHistory,
   saveSessionHistory,
+  setStoredUserModeSessionId,
 } from '../lib/session-storage';
 import { handleAuthExpired, isUnauthorized } from '../lib/auth-recovery';
 import { ModeSwitch, type AppMode } from './ModeSwitch';
@@ -1233,7 +1234,14 @@ export function AdkWorkbench({ mode, onSwitchMode }: AdkWorkbenchProps = {}) {
             {mode && onSwitchMode && (
               <ModeSwitch
                 mode={mode}
-                onSwitch={onSwitchMode}
+                onSwitch={(next) => {
+                  // 切到 User Mode 前，把目前 dev session 寫進共享 key，
+                  // 讓 User Mode 載入同一段對話（補上 Dev→User 方向）。
+                  if (next === 'user' && activeSessionId) {
+                    setStoredUserModeSessionId(activeSessionId);
+                  }
+                  onSwitchMode(next);
+                }}
                 variant='inline'
               />
             )}
@@ -1649,23 +1657,19 @@ export function AdkWorkbench({ mode, onSwitchMode }: AdkWorkbenchProps = {}) {
                       {message.role === 'agent' ? (
                         <div className='message__text message__markdown'>
                           {(() => {
-                            const renderPlainMarkdown = () => (
-                              <div
-                                dangerouslySetInnerHTML={{
-                                  __html: renderMarkdown(message.text),
-                                }}
-                              />
-                            );
-
-                            // Only swap in rendered cards once the message has
-                            // finished streaming, otherwise show raw markdown.
-                            if (message.status !== 'final') {
-                              return renderPlainMarkdown();
-                            }
-
                             const segments = splitRecommendationSegments(message.text);
-                            if (!segments.some((seg) => seg.type === 'card')) {
-                              return renderPlainMarkdown();
+                            const hasSpecial = segments.some(
+                              (seg) =>
+                                seg.type === 'card' || seg.type === 'card-loading',
+                            );
+                            if (!hasSpecial) {
+                              return (
+                                <div
+                                  dangerouslySetInnerHTML={{
+                                    __html: renderMarkdown(message.text),
+                                  }}
+                                />
+                              );
                             }
 
                             return (
@@ -1673,6 +1677,17 @@ export function AdkWorkbench({ mode, onSwitchMode }: AdkWorkbenchProps = {}) {
                                 {segments.map((seg, i) =>
                                   seg.type === 'card' ? (
                                     <InsuranceCard key={`card-${i}`} data={seg.data} />
+                                  ) : seg.type === 'card-loading' ? (
+                                    <div
+                                      key={`card-loading-${i}`}
+                                      style={{
+                                        margin: '8px 0',
+                                        opacity: 0.6,
+                                        fontStyle: 'italic',
+                                      }}
+                                    >
+                                      推薦卡片整理中…
+                                    </div>
                                   ) : (
                                     <div
                                       key={`md-${i}`}
@@ -1712,7 +1727,8 @@ export function AdkWorkbench({ mode, onSwitchMode }: AdkWorkbenchProps = {}) {
               );
             })}
 
-            {pending && (
+            {pending &&
+              !activeSession.messages.some((m) => m.status === 'streaming') && (
               <article className='message message--agent typing-indicator'>
                 <div className='message__meta'>agent • thinking</div>
                 <div className='typing-dots'>
@@ -1754,6 +1770,9 @@ export function AdkWorkbench({ mode, onSwitchMode }: AdkWorkbenchProps = {}) {
               )}
               <textarea
                 value={draft}
+                autoComplete="off"
+                data-1p-ignore=""
+                data-lpignore="true"
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={(event) => {
                   if (
