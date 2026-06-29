@@ -60,7 +60,7 @@ services:
       - AUDIT_DB_PATH=postgresql+asyncpg://user:password@db:5432/insurance
       - ADK_APP_NAME=${ADK_APP_NAME:-app}
       - MODEL_NAME=${MODEL_NAME:-gemini-2.5-flash}
-      - LIVE_MODEL_NAME=${LIVE_MODEL_NAME:-gemini-live-2.5-flash-preview-native-audio-09-2025}
+      - LIVE_MODEL_NAME=${LIVE_MODEL_NAME:-}
       - TOOLBOX_SERVER_URL=http://toolbox:5001
       - JWT_SECRET=${JWT_SECRET}
       - AUDIT_LOG_ENABLED=${AUDIT_LOG_ENABLED:-1}

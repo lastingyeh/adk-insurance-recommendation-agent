@@ -74,6 +74,7 @@ all = [
 include = ["app*"]
 
 [tool.pytest.ini_options]
+pythonpath = ["."]
 filterwarnings = [
   "ignore:authlib\\.jose module is deprecated, please use joserfc instead\\.:authlib.deprecate.AuthlibDeprecationWarning",
   "ignore:\\[EXPERIMENTAL\\] feature FeatureName\\.PLUGGABLE_AUTH is enabled\\.:UserWarning",

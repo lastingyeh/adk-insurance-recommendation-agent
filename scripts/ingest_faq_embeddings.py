@@ -2,7 +2,8 @@ import asyncpg
 import os
 import asyncio
 from dotenv import load_dotenv
-from vertexai.language_models import TextEmbeddingInput, TextEmbeddingModel
+from google import genai
+from google.genai import types
 from pgvector.asyncpg import register_vector
 
 load_dotenv()  # Load environment variables from .env file
@@ -16,24 +17,57 @@ if "postgresql+asyncpg://" in DB_URL:
     DB_URL = DB_URL.replace("postgresql+asyncpg://", "postgresql://")
 
 MODEL_NAME = "gemini-embedding-001"
-PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
-LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION", "us-central1")
+EMBED_DIM = 768
+EMBED_BATCH_SIZE = 100
+
+
+def _is_vertex_mode() -> bool:
+    """判斷目前是否為 Vertex 後端（GOOGLE_GENAI_USE_VERTEXAI 為真值）。"""
+    return os.getenv("GOOGLE_GENAI_USE_VERTEXAI", "0").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+def _check_credentials() -> str | None:
+    """依後端模式檢查必要憑證，缺少時回傳錯誤訊息，否則回傳 None。"""
+    if _is_vertex_mode():
+        if not os.getenv("GOOGLE_CLOUD_PROJECT"):
+            return (
+                "Vertex 模式 (GOOGLE_GENAI_USE_VERTEXAI=1) 需設定 GOOGLE_CLOUD_PROJECT，"
+                "並先完成 `gcloud auth application-default login`。"
+            )
+    else:
+        if not os.getenv("GOOGLE_API_KEY"):
+            return (
+                "API key 模式 (GOOGLE_GENAI_USE_VERTEXAI=0) 需設定 GOOGLE_API_KEY，"
+                "可至 https://aistudio.google.com/apikey 免費取得。"
+            )
+    return None
 
 
 async def get_embeddings(texts: list[str]) -> list[list[float]]:
-    """Generates embeddings for a list of texts using Vertex AI."""
-    model = TextEmbeddingModel.from_pretrained(MODEL_NAME)
-    inputs: list[str | TextEmbeddingInput] = [
-        TextEmbeddingInput(text, "RETRIEVAL_DOCUMENT") for text in texts
-    ]
-    # get_embeddings is a blocking call, use run_in_executor if needed or just call it directly in this script
-    embeddings = model.get_embeddings(inputs, output_dimensionality=768)
-    return [embedding.values for embedding in embeddings]
+    """產生文字向量，依 GOOGLE_GENAI_USE_VERTEXAI 自動選 Vertex 或 Developer API 後端。"""
+    client = genai.Client()
+    config = types.EmbedContentConfig(
+        task_type="RETRIEVAL_DOCUMENT", output_dimensionality=EMBED_DIM
+    )
+    results: list[list[float]] = []
+    for start in range(0, len(texts), EMBED_BATCH_SIZE):
+        batch = texts[start : start + EMBED_BATCH_SIZE]
+        resp = await client.aio.models.embed_content(
+            model=MODEL_NAME, contents=batch, config=config
+        )
+        results.extend(embedding.values for embedding in resp.embeddings)
+    return results
 
 
 async def ingest_faq():
-    if not PROJECT_ID:
-        print("Error: GOOGLE_CLOUD_PROJECT environment variable is not set.")
+    cred_error = _check_credentials()
+    if cred_error:
+        print(f"Error: {cred_error}")
         return
 
     print(f"Connecting to database: {DB_URL}")

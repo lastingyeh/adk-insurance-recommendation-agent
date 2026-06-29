@@ -55,7 +55,7 @@ variable "model_name" {
 variable "live_model_name" {
   type        = string
   description = "The Gemini model version to use for real-time (Live) streaming interactions."
-  default     = "gemini-live-2.5-flash-preview-native-audio-09-2025"
+  default     = "gemini-live-2.5-flash-native-audio"
 }
 
 variable "app_sa_roles" {

@@ -68,7 +68,7 @@ def test_config(postgres_container):
         session_db_uri=db_url,
         memory_mode="in_memory",
         model_name="gemini-2.5-flash",
-        live_model_name="gemini-live-2.5-flash-preview-native-audio-09-2025",
+        live_model_name="gemini-live-2.5-flash-native-audio",
         fastapi_host="127.0.0.1",
         fastapi_port=8080,
         fastapi_reload=False,

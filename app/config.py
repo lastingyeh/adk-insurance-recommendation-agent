@@ -31,6 +31,16 @@ def _parse_bool_env(name: str, default: bool) -> bool:
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+_LIVE_MODEL_VERTEX = "gemini-live-2.5-flash-native-audio"
+_LIVE_MODEL_DEVELOPER = "gemini-2.5-flash-native-audio-latest"
+
+
+def _default_live_model() -> str:
+    """LIVE_MODEL_NAME 未設定時，依 GOOGLE_GENAI_USE_VERTEXAI 自動挑選對應後端的 Live 模型。"""
+    use_vertex = _parse_bool_env("GOOGLE_GENAI_USE_VERTEXAI", False)
+    return _LIVE_MODEL_VERTEX if use_vertex else _LIVE_MODEL_DEVELOPER
+
+
 def _parse_csv_env(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
     """
     【輔助函式】：從環境變數解析以逗號分隔的字串列表 (CSV)，回傳 tuple。
@@ -108,9 +118,7 @@ def load_runtime_config() -> AppRuntimeConfig:
         ),
         memory_mode=os.getenv("ADK_MEMORY_MODE", "database"),
         model_name=os.getenv("MODEL_NAME", "gemini-2.5-flash"),
-        live_model_name=os.getenv(
-            "LIVE_MODEL_NAME", "gemini-live-2.5-flash-preview-native-audio-09-2025"
-        ),
+        live_model_name=os.getenv("LIVE_MODEL_NAME") or _default_live_model(),
         fastapi_host=os.getenv("FASTAPI_HOST", "127.0.0.1"),
         fastapi_port=int(os.getenv("FASTAPI_PORT", "8080")),
         fastapi_reload=_parse_bool_env("FASTAPI_RELOAD", True),
