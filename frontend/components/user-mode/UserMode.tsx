@@ -923,6 +923,9 @@ function Composer({
     >
       <textarea
         value={value}
+        autoComplete="off"
+        data-1p-ignore=""
+        data-lpignore="true"
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={handleKey}
         placeholder={placeholder}
@@ -1699,6 +1702,9 @@ function ContactRequestForm({
           <span className="um-contact__label">想優先了解的部分（選填）</span>
           <textarea
             value={notes}
+            autoComplete="off"
+            data-1p-ignore=""
+            data-lpignore="true"
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
             placeholder="例如：實支實付理賠範圍、家族病史是否影響核保…"

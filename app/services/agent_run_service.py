@@ -10,6 +10,7 @@ import base64
 from collections.abc import AsyncGenerator
 from datetime import datetime
 
+from google.adk.agents.run_config import RunConfig, StreamingMode
 from google.adk.events.event import Event
 from google.adk.runners import Runner
 from google.genai import types as genai_types
@@ -141,6 +142,7 @@ async def iter_run_events(
         session_id=session_id,
         new_message=build_user_message_content(prompt, image, image_type),
         state_delta=state_delta or None,
+        run_config=RunConfig(streaming_mode=StreamingMode.SSE),
     ):
         yield event
 
@@ -440,8 +442,9 @@ class AgentRunService:
 
             kind = str(event.get("kind", "timeline"))  # type: ignore
 
-            # 工具相關已在 _record_adk_event_audit 記錄過，此處跳過避免重複
-            if kind in {"tool-call", "tool-result"}:
+            # 工具相關已在 _record_adk_event_audit 記錄過；partial 逐字串流不重複審計，
+            # 僅在最終完整回覆 (kind="agent") 記錄一次，避免每個 token 一筆 DB 寫入。
+            if kind in {"tool-call", "tool-result", "stream"}:
                 return
 
             # 對應不同的 event kind 到 audit 的事件類型
