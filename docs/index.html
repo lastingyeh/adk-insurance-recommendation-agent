@@ -1698,6 +1698,20 @@
             <p>未啟用 Billing 的 GCP 專案在 Workshop 現場將無法呼叫 Vertex AI API，導致後續實作無法進行。請在到場前於 Google Cloud Console 完成驗證。</p>
           </div>
 
+          <div class="callout callout-tip">
+            <strong>💡 沒有 GCP 帳號，或不想啟用計費？改用 <code>feat/api-key-mode-support</code> 分支</strong>
+            <p>
+              這個分支已調整為「純 API key 模式」：只要一把免費的 <strong>Gemini API key</strong>（於
+              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>
+              取得，<strong>免信用卡、免 GCP 專案</strong>），即可在本機跑完整功能，包含 FAQ 語意搜尋與 Live 對話；
+              雲端 Terraform / Cloud Run 部署那段則略過（可看講師示範）。
+            </p>
+            <p>
+              切換方式：<code>git checkout feat/api-key-mode-support</code>，再依
+              <code>.env.example</code> 設定 <code>GOOGLE_GENAI_USE_VERTEXAI=0</code> 與 <code>GOOGLE_API_KEY</code> 即可。
+            </p>
+          </div>
+
           <h4>2. GitHub 帳號</h4>
           <p>本專案整合了基於 GitHub 的雲端自動化部署 (CI/CD)。</p>
           <ul>
