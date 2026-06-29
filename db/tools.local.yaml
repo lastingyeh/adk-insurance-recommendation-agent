@@ -12,6 +12,9 @@ kind: embeddingModel
 name: vertex_embedding
 type: gemini
 model: gemini-embedding-001
+# 本機/無 GCP 預設用 API key（Developer API）。要改走 Vertex 時移除下行 apiKey，
+# 並改在容器內提供 GOOGLE_CLOUD_PROJECT/LOCATION + ADC。
+apiKey: ${GOOGLE_API_KEY}
 dimension: 768
 
 ---

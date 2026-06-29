@@ -20,10 +20,10 @@ services:
     ports:
       - '${TOOLBOX_PORT:-5001}:5001'
     environment:
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
-      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
-      - GOOGLE_GENAI_USE_VERTEXAI=1
-      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp_creds.json
+      # 本機/無 GCP 預設用 API key 做 embedding（tools.local.yaml 的 apiKey 取此值）。
+      # 注意：toolbox 一旦看到 GOOGLE_CLOUD_PROJECT/LOCATION 會強制改走 Vertex 並要求 ADC，
+      # 故 key 模式下「不可」傳入 project/location。要走 Vertex 請改用 tools.cloud.yaml。
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=user
@@ -31,7 +31,6 @@ services:
       - DB_NAME=insurance
     volumes:
       - ./db:/workspace/db
-      - ~/.config/gcloud/application_default_credentials.json:/tmp/gcp_creds.json:ro
     command: [
         '-a',
         '0.0.0.0',
@@ -51,11 +50,12 @@ services:
     ports:
       - '${BACKEND_PORT:-8080}:8080'
     environment:
+      # 本機/無 GCP 預設走 API key（USE_VERTEXAI 預設 0）。要走 Vertex：在 .env 設 1，
+      # 並還原下方 volumes 的 ADC 掛載與 GOOGLE_APPLICATION_CREDENTIALS。
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
-      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
-      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI:-1}
-      - GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp_creds.json
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT:-}
+      - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION:-us-central1}
+      - GOOGLE_GENAI_USE_VERTEXAI=${GOOGLE_GENAI_USE_VERTEXAI:-0}
       - DATABASE_URL=postgresql+asyncpg://user:password@db:5432/insurance
       - AUDIT_DB_PATH=postgresql+asyncpg://user:password@db:5432/insurance
       - ADK_APP_NAME=${ADK_APP_NAME:-app}
@@ -72,7 +72,6 @@ services:
       - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-insurance-recommendation-agent}
     volumes:
       - ./db:/app/db
-      - ~/.config/gcloud/application_default_credentials.json:/tmp/gcp_creds.json:ro
     depends_on:
       - db
       - toolbox
