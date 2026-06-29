@@ -1589,11 +1589,6 @@
             </tbody>
           </table>
 
-          <div class="callout callout-note">
-            <strong>NOTE</strong>
-            <p>⭐ <strong>Step 3（核心技術實作）</strong>為本次 Workshop 最重要的章節，佔 30 分鐘，請優先確保此段落有充足的時間深度導讀。</p>
-          </div>
-
           <div class="codelab-step__header">
             <span class="codelab-step__num">0</span>
             <h2 class="codelab-step__title">課前準備與環境安裝 <span style="font-size:16px;font-weight:400;color:var(--color-text-secondary)">（請在 Workshop 開始前完成）</span></h2>
@@ -1937,7 +1932,7 @@ gcloud auth application-default login</code></pre>
           </div>
           <div class="callout callout-note">
             <strong>⏱ 時段：0:00 – 0:10（10 分鐘）</strong>
-            <p>本章節為 Workshop 開場導覽，講師帶領大家建立整體系統認知，為後續實作奠定「地圖」基礎。</p>
+            <p>本章節為 Workshop 開場導覽，建立整體系統認知，為後續實作奠定「地圖」基礎。</p>
           </div>
 
           <p>👋 大家好！我是你們的技術架構導師。</p>
@@ -2395,21 +2390,18 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
           </div>
           <div class="callout callout-important">
             <strong>⭐ 核心主軸 ⏱ 時段：0:25 – 0:55（30 分鐘）</strong>
-            <p>
-              本章節是 Workshop 最重要的技術段落，請講師預留充足時間深度導讀。
-              重點聚焦在<strong>階段 3：WebSocket 多模態 Gemini Live 雙向串流生命週期</strong>。
+            <p>重點觀察與理解本章節的核心技術段落：
+              <strong>階段 3：WebSocket 多模態 Gemini Live 雙向串流生命週期。</strong>
             </p>
           </div>
 
           <p>
-            本章節會用技術講師帶領實作的角度，拆解保險推薦 Agent
+            本章節會用技術實作的角度，拆解保險推薦 Agent
             從「一般文字串流」進階到「多模態即時互動」的關鍵設計。閱讀時請把重心放在
             <b>階段 3：WebSocket 多模態 Gemini Live 雙向串流生命週期</b>：它是本
             workshop 最能體現即時 AI Agent 工程能力的核心段落。
           </p>
           <p>
-            講師帶讀時，建議先用階段 1 與階段 2
-            建立必要背景，再把主要時間投入階段 3：觀察 WebSocket
             如何完成安全握手、RunConfig
             初始化、上下游任務併發、媒體封包轉換、模型事件回傳，以及斷線後的資源回收。
           </p>
@@ -2442,7 +2434,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
           </div>
 
           <!-- 關鍵代碼地圖 -->
-          <h3>🎯 講師帶讀代碼地圖 (Instructor Code Map)</h3>
+          <h3>🎯 代碼地圖 (Instructor Code Map)</h3>
           <p>
             帶學員閱讀此章時，建議依照下列順序打開檔案。前兩列是本章主軸，後兩列是支撐背景；這樣可以避免學員先陷入框架細節，而忽略
             Live WebSocket 的資料流。
@@ -2452,7 +2444,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
               <tr>
                 <th>帶讀順序與核心檔案</th>
                 <th>技術定位</th>
-                <th>講師引導重點</th>
+                <th>引導重點</th>
               </tr>
             </thead>
             <tbody>
@@ -2628,7 +2620,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   <strong>過濾重複用戶回顯 (Echo Filter)</strong>：
                   <ul>
                     <li>
-                      <b>講師帶讀提醒</b>：ADK
+                      <b>重要提醒</b>：ADK
                       的執行流在第一個回合（Turn）通常會將用戶的原始輸入（Prompt）作為
                       Event 重新拋出。這裡可以帶學員觀察
                       <code>AgentRunService</code> 如何用
@@ -4692,8 +4684,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                 </a>
               </div>
               <p>
-                這是本章的主要實作段落。講師可以把它當成一條完整的「即時 AI
-                通話管線」來帶：前端先建立 WebSocket 長連線，後端完成 JWT
+                完整的「即時 AI通話管線」：前端先建立 WebSocket 長連線，後端完成 JWT
                 安全握手，接著 <code>LiveAgentService</code> 建立 Live API
                 執行配置，最後用兩個非同步任務分別處理上游媒體輸入與下游模型回應。
               </p>
@@ -4709,7 +4700,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   >：
                   <ul>
                     <li>
-                      <strong>講師示範入口</strong>：從前端發起
+                      從前端發起
                       <code>/api/agent/live/ws/{session_id}</code>
                       長連線開始，說明為什麼瀏覽器 WebSocket 常需要把 token 放在
                       Query string，再由後端手動取出驗證。
@@ -4741,7 +4732,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       >
                       全雙工串流、繁體中文 STT/TTS，以及
                       <code>ProactivityConfig</code
-                      >。講師可在此說明：模型能力、語音互動體驗與延遲表現，都會被這個配置直接影響。
+                      >。重點說明：模型能力、語音互動體驗與延遲表現，都會被這個配置直接影響。
                     </li>
                     <li>
                       <strong
@@ -4764,7 +4755,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   >：
                   <p>
                     <code>LiveAgentService.execute_live_session()</code>
-                    是講師應該慢下來講解的核心方法。它利用 Python
+                    核心方法：利用 Python
                     <code>asyncio</code> 同步啟動兩條任務，並用
                     <code
                       >asyncio.wait(...,
@@ -4790,7 +4781,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       >，持續讀取模型回傳事件，序列化後傳回瀏覽器播放或顯示。
                     </li>
                     <li>
-                      <strong>講師提醒</strong
+                      <strong>重點提醒</strong
                       >：這裡的重點是「兩條流同時存在」。使用者可能一邊講話，模型一邊回應；任一側斷掉，另一側都必須被取消，否則就會留下仍在等待
                       I/O 的背景任務。
                     </li>
@@ -4802,7 +4793,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   >：
                   <p>
                     <code>upstream_task()</code>
-                    是觀察多模態輸入的最佳入口。講師可以現場對照瀏覽器送出的封包，讓學員看到不同媒體型別如何被轉成
+                    是觀察多模態輸入的最佳入口，透過瀏覽器送出的封包，讓學員看到不同媒體型別如何被轉成
                     Live API 可接受的資料：
                   </p>
                   <ul>
@@ -4831,7 +4822,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         >)</strong
                       >：攝像頭或螢幕共享影格會連續透過
                       <code>send_realtime()</code>
-                      推送。講師可提醒學員：影格頻率、尺寸與壓縮策略會直接影響成本、延遲與穩定性。
+                      推送。重點提醒：影格頻率、尺寸與壓縮策略會直接影響成本、延遲與穩定性。
                     </li>
                     <li>
                       <strong
@@ -4854,7 +4845,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   <ul>
                     <li>
                       <strong>語音合成與轉錄觀察</strong
-                      >：當模型發話或使用者說話時，後端會接收即時事件與轉錄資訊。這是講師帶偵錯時最直觀的觀察點，可用來確認音訊是否真的被模型接收、模型是否正在生成語音回應。
+                      >：當模型發話或使用者說話時，後端會接收即時事件與轉錄資訊。重點確認：音訊是否真的被模型接收、模型是否正在生成語音回應。
                     </li>
                     <li>
                       <strong>Terminal Errors 必須轉成前端可理解的訊息</strong
@@ -4872,7 +4863,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         >model_dump_json(exclude_none=True, by_alias=True)</code
                       >
                       移除空欄位後送回
-                      WebSocket。講師可在此提醒：即時系統中，每個多餘欄位都會在高頻事件下變成可感知的頻寬成本。
+                      WebSocket。重點提醒：即時系統中，每個多餘欄位都會在高頻事件下變成可感知的頻寬成本。
                     </li>
                   </ul>
                 </li>
@@ -4882,7 +4873,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                     Cleanup)</strong
                   >：
                   <p>
-                    這是講師最應強調的工程收尾。當前端離線（觸發
+                    當前端離線（觸發
                     <code>WebSocketDisconnect</code
                     >）或下游任務拋出異常時，並行調度器會立即對仍在執行的
                     pending 任務發送 <code>cancel()</code>，並確保進入
@@ -7516,40 +7507,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             </div>
           </details>
 
-          <!-- 改善 4：講師提醒與實作觀察 Gotchas -->
-          <div class="callout callout-warning">
-            <strong>💡 講師提醒與實作觀察 (INSTRUCTOR GOTCHAS)</strong>
-            <ul>
-              <li>
-                <strong>先讓學員看見 Echo，再說明為什麼要過濾。</strong><br />
-                在非同步 Runner 發送消息時，ADK 可能拋出包含使用者原始輸入的轉發
-                Event。講師可以先示範如果不攔截會造成前端重複對話氣泡，再回到
-                <code>is_echoed_user_input()</code> 說明事件邊界的必要性。
-              </li>
-              <li>
-                <strong>圖片縮放要從使用者體驗說起，而不是從限制說起。</strong
-                ><br />
-                Gemini Live
-                接收過大的圖片或影格時，可能引發維度錯誤或顯著延遲。帶學員看
-                <a class="gh-src" href="blob/main/app/streaming/upstream.py" target="_blank" rel="noopener"><code>upstream.py</code></a>
-                時，請強調這段處理的目標是維持即時互動流暢度：限制尺寸、轉
-                RGB、移除透明通道、輸出
-                JPEG，都是為了讓模型更快、更穩定地消費影像。
-              </li>
-              <li>
-                <strong>斷線清理是 Live WebSocket 實作的收尾主題。</strong
-                ><br />
-                當使用者關閉頁面、麥克風中斷或模型端回傳 terminal error
-                時，後端若仍阻塞在
-                <code>runner.run_live</code>
-                迭代中，就會留下背景協程與網路資源。請帶學員對照
-                <code>asyncio.wait(..., return_when=FIRST_EXCEPTION)</code
-                >、pending task cancel、以及
-                <code>live_request_queue.close()</code
-                >，理解為什麼即時系統的穩定性取決於清理邏輯是否完整。
-              </li>
-            </ul>
-          </div>
+
 
           <div class="codelab-step-nav">
             <a class="prev" href="#step-2">第一站：地端環境啟動</a>
@@ -7566,7 +7524,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
           </div>
           <div class="callout callout-note">
             <strong>⏱ 時段：0:55 – 1:05（10 分鐘）</strong>
-            <p>本章節聚焦企業級安全設計，講師帶讀 JWT、PII 遮蔽與審計日誌的實作要點。</p>
+            <p>本章節聚焦企業級安全設計，重點說明 JWT、PII 遮蔽與審計日誌的實作要點。</p>
           </div>
           <p>
             在保險金融領域，使用者敏感資訊（PII）與合規性是首要命脈。我們實作了多層次縱深防禦機制：

@@ -155,7 +155,7 @@ db-seed: ## 執行資料庫填充 (建立測試帳號)
 db-ingest: ## 執行知識庫向量化 (FAQ Ingestion)
 	@$(PYTHON) scripts/ingest_faq_embeddings.py
 
-db-setup: db-init db-seed db-ingest ## 完整資料庫初始化 (啟 জলা動 + Seed + Ingest)
+db-setup: db-init db-seed db-ingest ## 完整資料庫初始化 (啟動 + Seed + Ingest)
 	@echo "資料庫設定完成！"
 
 db-clean: ## 僅清除資料庫 Volume（保留容器設定）
