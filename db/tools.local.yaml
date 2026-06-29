@@ -12,6 +12,10 @@ kind: embeddingModel
 name: vertex_embedding
 type: gemini
 model: gemini-embedding-001
+# 預設走 Vertex：讀容器內的 GOOGLE_CLOUD_PROJECT/LOCATION + ADC。
+# 無 GCP 的 B 方案（key 模式）：加一行 apiKey 欄位指向環境變數 GOOGLE_API_KEY（語法為錢字號加大括號），
+# 並確保 toolbox 容器「不」帶 GOOGLE_CLOUD_PROJECT/LOCATION（否則 project 會覆蓋 apiKey、強制走 Vertex）。
+# 注意：toolbox 會對整個檔（含註解）做環境變數替換，故此處不直接寫出該語法以免解析時報變數未設定。
 dimension: 768
 
 ---

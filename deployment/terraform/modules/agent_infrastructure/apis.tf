@@ -16,6 +16,7 @@ locals {
   services = [
     "aiplatform.googleapis.com",
     "run.googleapis.com",
+    "compute.googleapis.com",
     "bigquery.googleapis.com",
     "cloudresourcemanager.googleapis.com",
     "iam.googleapis.com",

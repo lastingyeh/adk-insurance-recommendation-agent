@@ -17,7 +17,7 @@ def config():
         toolbox_server_url="http://localhost",
         session_db_uri="sqlite+aiosqlite:///:memory:",
         model_name="gemini-2.5-flash",
-        live_model_name="gemini-live-2.5-flash-preview-native-audio-09-2025",
+        live_model_name="gemini-live-2.5-flash-native-audio",
         memory_mode="in_memory",
         fastapi_host="127.0.0.1",
         fastapi_port=8080,

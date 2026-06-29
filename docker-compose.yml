@@ -20,6 +20,9 @@ services:
     ports:
       - '${TOOLBOX_PORT:-5001}:5001'
     environment:
+      # 預設走 Vertex（讀 GOOGLE_CLOUD_PROJECT/LOCATION + ADC）。
+      # 無 GCP 的 B 方案（key 模式）：在 tools.local.yaml 的 embeddingModel 加 apiKey: ${GOOGLE_API_KEY}，
+      # 並把下面的 GOOGLE_CLOUD_PROJECT/LOCATION 與 ADC 掛載拿掉（toolbox 一旦看到 project/location 會強制走 Vertex）。
       - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
       - GOOGLE_GENAI_USE_VERTEXAI=1
@@ -51,6 +54,9 @@ services:
     ports:
       - '${BACKEND_PORT:-8080}:8080'
     environment:
+      # 預設走 Vertex（GOOGLE_GENAI_USE_VERTEXAI 預設 1，需 GCP 專案 + ADC）。
+      # 無 GCP 的 B 方案（key 模式）：在 .env 設 GOOGLE_GENAI_USE_VERTEXAI=0 並填 GOOGLE_API_KEY；
+      # 此時不需 ADC，可移除下方 volumes 的 ADC 掛載。
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
       - GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
@@ -60,7 +66,9 @@ services:
       - AUDIT_DB_PATH=postgresql+asyncpg://user:password@db:5432/insurance
       - ADK_APP_NAME=${ADK_APP_NAME:-app}
       - MODEL_NAME=${MODEL_NAME:-gemini-2.5-flash}
-      - LIVE_MODEL_NAME=${LIVE_MODEL_NAME:-gemini-live-2.5-flash-preview-native-audio-09-2025}
+      # 不在此硬寫 Vertex 預設名，否則 key 模式會永遠吃到 Vertex 名、蓋掉 config.py 的自動分流。
+      # 未設時傳空字串，交給 app/config.py 依 GOOGLE_GENAI_USE_VERTEXAI 自動選對應後端的 Live 模型。
+      - LIVE_MODEL_NAME=${LIVE_MODEL_NAME:-}
       - TOOLBOX_SERVER_URL=http://toolbox:5001
       - JWT_SECRET=${JWT_SECRET}
       - AUDIT_LOG_ENABLED=${AUDIT_LOG_ENABLED:-1}
@@ -72,6 +80,7 @@ services:
       - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-insurance-recommendation-agent}
     volumes:
       - ./db:/app/db
+      # Vertex 模式（預設）需要 ADC。無 GCP 的 B 方案（key 模式）不需要，可移除下一行。
       - ~/.config/gcloud/application_default_credentials.json:/tmp/gcp_creds.json:ro
     depends_on:
       - db

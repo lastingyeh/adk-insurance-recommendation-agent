@@ -266,7 +266,7 @@ def save_user_profile(age: int, budget: int, tool_context: ToolContext):
 *   `DATABASE_URL` / `ADK_SESSION_DB_URI`: PostgreSQL 資料庫連線字串，用於儲存 Session 與使用者。
 *   `AUDIT_DB_PATH`: 審計日誌資料庫連線字串。
 *   `MODEL_NAME`: 一般對話使用的模型，建議預設為 `gemini-2.5-flash`。
-*   `LIVE_MODEL_NAME`: WebSocket 即時對話使用的模型，預設為 `gemini-live-2.5-flash-preview-native-audio-09-2025`。
+*   `LIVE_MODEL_NAME`: WebSocket 即時對話使用的模型，預設為 `gemini-live-2.5-flash-native-audio`。
 *   `TOOLBOX_SERVER_URL`: MCP 遠端工具箱伺服器 URL (提供保險商品資料)。
 *   `JWT_SECRET`: JWT 簽章密鑰。
 *   `PII_REDACTION_ENABLED`: 是否啟用 PII 遮蔽安全功能。

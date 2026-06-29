@@ -376,7 +376,7 @@ gcp-db-setup: ## 一鍵自動初始化雲端資料庫 (啟動 Proxy + 執行 SQL
 	echo "0. 準備 Docker 網路與憑證..."; \
 	docker network create gcp-db-setup-net 2>/dev/null || true; \
 	trap "docker rm -f cloud-sql-proxy 2>/dev/null || true; docker network rm gcp-db-setup-net 2>/dev/null || true; rm -f /tmp/adc_db_setup.json" EXIT; \
-	if [ -f .env ]; then export $$(grep GOOGLE_APPLICATION_CREDENTIALS .env | xargs); fi; \
+	if [ -f .env ]; then export $$(grep -E '^[[:space:]]*GOOGLE_APPLICATION_CREDENTIALS=' .env | xargs); fi; \
 	if [ -n "$$GOOGLE_APPLICATION_CREDENTIALS" ] && [ -f "$$GOOGLE_APPLICATION_CREDENTIALS" ]; then \
 		cp "$$GOOGLE_APPLICATION_CREDENTIALS" /tmp/adc_db_setup.json; \
 	else \
@@ -387,7 +387,7 @@ gcp-db-setup: ## 一鍵自動初始化雲端資料庫 (啟動 Proxy + 執行 SQL
 	docker run -d --name cloud-sql-proxy --network gcp-db-setup-net -p 5432:5432 -v /tmp/adc_db_setup.json:/adc.json:ro -e GOOGLE_APPLICATION_CREDENTIALS=/adc.json gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.3 "$$CONNECTION_NAME" --port 5432 --address 0.0.0.0 > /dev/null 2>&1; \
 	echo "等待 Proxy 就緒與網路解析..."; \
 	for i in {1..20}; do \
-		if docker run --rm --network gcp-db-setup-net postgres:16-alpine nc -z cloud-sql-proxy 5432 >/dev/null 2>&1; then \
+		if docker run --rm --network gcp-db-setup-net postgres:16-alpine pg_isready -h cloud-sql-proxy -p 5432 -U "$$DB_USER" >/dev/null 2>&1; then \
 			echo "Proxy 已就緒！"; \
 			break; \
 		fi; \
