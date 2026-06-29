@@ -247,7 +247,11 @@ export function UserMode({ mode, onSwitchMode }: UserModeProps = {}) {
       if (message.role !== 'agent' || !message.text) continue;
       // Try parsing even mid-stream — the extractor skips malformed JSON,
       // and once the block is complete it will populate the grid in real time.
-      extractor.ingestAgentMessage({ id: message.id, text: message.text });
+      extractor.ingestAgentMessage({
+        id: message.id,
+        text: message.text,
+        status: message.status,
+      });
     }
   }, [messages, extractor]);
 
