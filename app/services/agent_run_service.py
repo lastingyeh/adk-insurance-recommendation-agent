@@ -212,7 +212,9 @@ def map_adk_event_to_envelopes(event: Event, sequence: int) -> list[dict[str, ob
         suffix = f"{event_id}-{part_index}"
 
         # 處理模型發起的工具請求
-        if part.function_call and part.function_call.name:
+        # 串流模式 (StreamingMode.SSE) 下，同一個 function_call 會在 partial 與最終事件各出現一次；
+        # 只在非 partial（完整）事件才吐 tool-call，避免前端產生重複且永遠 pending 的進度條目。
+        if part.function_call and part.function_call.name and not event.partial:
             tool_name = part.function_call.name
             is_internal = is_internal_session_tool(tool_name)
 
@@ -387,8 +389,8 @@ class AgentRunService:
             # 使用 sequence * 100 確保同一事件內的複數 part 有獨立且有序的序號
             audit_sequence = sequence * 100 + part_index
 
-            # 記錄工具請求
-            if part.function_call and part.function_call.name:
+            # 記錄工具請求（串流模式下 partial 會帶重複的 function_call，只記非 partial）
+            if part.function_call and part.function_call.name and not event.partial:
                 tool_name = part.function_call.name
                 await self._audit_logs.record(
                     context=audit_context,
