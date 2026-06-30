@@ -17,33 +17,16 @@ echo -e "${CYAN}================================================================
 # 📋 階段一：系統與基礎開發工具
 echo -e "\n${BLUE}📋 階段一：系統與基礎開發工具 (System & Core Tools)${NC}"
 
-# 1. Xcode Command Line Tools
-if xcode-select -p >/dev/null 2>&1; then
-    echo -e "  [${GREEN}✔${NC}] 1. Xcode Command Line Tools (已安裝)"
-else
-    echo -e "  [${RED}✘${NC}] 1. Xcode Command Line Tools (未安裝，請執行 xcode-select --install)"
-    HAS_ERRORS=1
-fi
-
-# 2. Homebrew
-if command -v brew >/dev/null 2>&1; then
-    BREW_VERSION=$(brew --version | head -n 1)
-    echo -e "  [${GREEN}✔${NC}] 2. Homebrew (已安裝: ${BREW_VERSION})"
-else
-    echo -e "  [${RED}✘${NC}] 2. Homebrew (未安裝，請參考 docs/setup-env.md 安裝)"
-    HAS_ERRORS=1
-fi
-
-# 3. Docker Desktop
+# 1. Docker Desktop
 if command -v docker >/dev/null 2>&1; then
     DOCKER_VER=$(docker --version | head -n 1)
     if docker info >/dev/null 2>&1; then
-        echo -e "  [${GREEN}✔${NC}] 3. Docker Desktop (已安裝: ${DOCKER_VER}, 服務運作中)"
+        echo -e "  [${GREEN}✔${NC}] 1. Docker Desktop (已安裝: ${DOCKER_VER}, 服務運作中)"
     else
-        echo -e "  [${YELLOW}⚠${NC}] 3. Docker Desktop (已安裝: ${DOCKER_VER}, 但${YELLOW}服務未啟動${NC}，請打開 Docker Desktop)"
+        echo -e "  [${YELLOW}⚠${NC}] 1. Docker Desktop (已安裝: ${DOCKER_VER}, 但${YELLOW}服務未啟動${NC}，請打開 Docker Desktop)"
     fi
 else
-    echo -e "  [${RED}✘${NC}] 3. Docker Desktop (未安裝，請安裝 Docker Desktop)"
+    echo -e "  [${RED}✘${NC}] 1. Docker Desktop (未安裝，請執行 choco install docker-desktop -y)"
     HAS_ERRORS=1
 fi
 
@@ -98,7 +81,7 @@ if command -v uv >/dev/null 2>&1; then
     UV_VER=$(uv --version | head -n 1)
     echo -e "  [${GREEN}✔${NC}] 2. uv (${UV_VER})"
 else
-    echo -e "  [${RED}✘${NC}] 2. uv (未安裝，請執行 brew install uv)"
+    echo -e "  [${RED}✘${NC}] 2. uv (未安裝，請執行 choco install uv -y)"
     HAS_ERRORS=1
 fi
 
@@ -112,7 +95,7 @@ if command -v node >/dev/null 2>&1; then
         echo -e "  [${YELLOW}⚠${NC}] 3. Node.js (已安裝: ${NODE_VER}，但建議版本 >= v20)"
     fi
 else
-    echo -e "  [${RED}✘${NC}] 3. Node.js (未安裝，請執行 brew install node)"
+    echo -e "  [${RED}✘${NC}] 3. Node.js (未安裝，請執行 choco install nodejs -y)"
     HAS_ERRORS=1
 fi
 

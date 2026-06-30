@@ -34,6 +34,7 @@ def create_session_store(config: AppRuntimeConfig) -> BaseSessionService:
     """
     if config.memory_mode == "in_memory":
         from google.adk.sessions import InMemorySessionService
+
         return InMemorySessionService()
     return DatabaseSessionService(db_url=config.session_db_uri)
 
