@@ -871,7 +871,34 @@ switch ($Command) {
     if (-not $connectionName) {
       throw "db_instance_connection_name not found. Run tf-apply first."
     }
-    Invoke-Step -FilePath "cloud-sql-proxy" -Arguments @($connectionName)
+    # Use the Docker-based cloud-sql-proxy image (same as gcp-db-setup) so
+    # Windows users do not need to install the standalone cloud-sql-proxy
+    # binary on PATH. Runs in foreground so connection logs are visible;
+    # press Ctrl+C to stop. Reuses the same ADC and network conventions.
+    $adcSourcePath = Get-AdcSourcePath
+    if (-not $adcSourcePath) {
+      throw "No application default credentials found. Set GOOGLE_APPLICATION_CREDENTIALS or run gcloud auth application-default login."
+    }
+    $adcTempPath = Join-Path $env:TEMP "adc_db_proxy.json"
+    $proxyContainer = "cloud-sql-proxy"
+    try {
+      Copy-Item -LiteralPath $adcSourcePath -Destination $adcTempPath -Force
+      try { & docker rm -f $proxyContainer *> $null } catch {}
+      Write-Host "Starting cloud-sql-proxy (Docker) on 127.0.0.1:5432; Ctrl+C to stop."
+      Write-Host "Connection: $connectionName"
+      Invoke-Docker @(
+        "run", "--rm",
+        "--name", $proxyContainer,
+        "-p", "5432:5432",
+        "-v", "${adcTempPath}:/adc.json:ro",
+        "-e", "GOOGLE_APPLICATION_CREDENTIALS=/adc.json",
+        "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0",
+        $connectionName, "--port", "5432", "--address", "0.0.0.0"
+      )
+    } finally {
+      try { & docker rm -f $proxyContainer *> $null } catch {}
+      Remove-Item $adcTempPath -Force -ErrorAction SilentlyContinue
+    }
   }
   "gcp-db-init-info" {
     $tfDir = Get-TfDir -SelectedEnvName $EnvName
@@ -925,33 +952,32 @@ switch ($Command) {
         "-p", "5432:5432",
         "-v", "${adcTempPath}:/adc.json:ro",
         "-e", "GOOGLE_APPLICATION_CREDENTIALS=/adc.json",
-        "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.3",
+        "gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.23.0",
         $connectionName, "--port", "5432", "--address", "0.0.0.0"
       )
 
       $ready = $false
-      for ($i = 1; $i -le 20; $i++) {
-        try {
-          # The proxy publishes 5432 to the host via `docker run -p
-          # 5432:5432`, so a host-side TCP probe to 127.0.0.1:5432 is
-          # enough to confirm it is listening. This avoids the cost of
-          # spinning up a fresh postgres container on every attempt
-          # (which has to pull `postgres:16-alpine` on first run and
-          # depends on Docker DNS for `cloud-sql-proxy` warming up on
-          # the user-defined network).
-          $client = New-Object System.Net.Sockets.TcpClient
-          $client.Connect("127.0.0.1", 5432)
-          $client.Close()
+      for ($i = 1; $i -le 30; $i++) {
+        # Probe the proxy via pg_isready on the same user-defined network.
+        # A bare TCP connect only confirms the proxy has bound the port,
+        # not that it has finished establishing the upstream Cloud SQL
+        # connection (which requires ADC auth + TLS). Without this, psql
+        # often races the proxy and gets "server closed the connection
+        # unexpectedly". pg_isready performs a real Postgres protocol
+        # handshake, so a successful return means the proxy is ready to
+        # accept application connections.
+        $probe = & docker run --rm --network $networkName postgres:16-alpine `
+          pg_isready -h cloud-sql-proxy -p 5432 -U $dbUser 2>&1
+        if ($LASTEXITCODE -eq 0) {
           $ready = $true
           break
-        } catch {
-          # Port not open yet; wait and retry.
         }
         Start-Sleep -Seconds 2
       }
 
       if (-not $ready) {
-        & docker logs $proxyContainer
+        Write-Host "----- cloud-sql-proxy logs (last 50 lines) -----" -ForegroundColor Yellow
+        & docker logs --tail 50 $proxyContainer
         throw "Cloud SQL Proxy did not become ready in time."
       }
 
