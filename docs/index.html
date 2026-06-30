@@ -1801,13 +1801,10 @@ gcloud config set project YOUR_PROJECT_ID
 gcloud auth application-default login</code></pre>
               </div>
               <div class="tab-panel" data-platform="windows">
-                <h4>1. 設定本機環境變數與 API 密鑰</h4>
+                <h4>1. 設定本機環境變數</h4>
                 <pre data-lang="powershell"><code class="language-powershell"># 拷貝環境變數範例
 Copy-Item .env.example .env
-
-# 設定 Gemini API Key (PowerShell 語法，adk.dev 風格)
-$env:GOOGLE_API_KEY="AIzaSy..."
-$env:GOOGLE_GENAI_USE_VERTEXAI="FALSE"</code></pre>
+                </code></pre>
                 <p>請開啟 <code>.env</code> 填寫您的 API 密鑰與專案設定值。</p>
 
                 <h4>2. 啟動並初始化本機資料庫與依賴套件</h4>
@@ -2072,7 +2069,10 @@ gcloud auth application-default login</code></pre>
             <li>
               <strong>啟用 GCP 核心基礎服務 APIs</strong>：
               <p>若你的專案是全新建立的，請手動啟用以下必要 API 服務：</p>
-              <pre><code class="language-bash">gcloud services enable cloudresourcemanager.googleapis.com serviceusage.googleapis.com</code><code class="language-bash">gcloud services enable aiplatform.googleapis.com</code></pre>
+              <pre><code class="language-bash">
+gcloud services enable cloudresourcemanager.googleapis.com serviceusage.googleapis.com
+gcloud services enable aiplatform.googleapis.com
+              </code></pre>
             </li>
           </ol>
 
@@ -7633,8 +7633,8 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                 LLM 之前，會對台灣身分證字號、Email、電話進行自動轉換：
               </p>
               <pre><code class="language-python"># pii.py 正則比對示例
-      TAIWAN_ID_RE = re.compile(r"\b[A-Z][12]\d{8}\b", re.I)
-      redacted, findings = redact_text(input_text) # 將 ID 轉為 [REDACTED_TW_ID]</code></pre>
+TAIWAN_ID_RE = re.compile(r"\b[A-Z][12]\d{8}\b", re.I)
+redacted, findings = redact_text(input_text) # 將 ID 轉為 [REDACTED_TW_ID]</code></pre>
             </li>
             <li>
               <strong>雜湊鏈防竄改審計日誌 (Hash Chain Audit Log)</strong>：
@@ -7882,20 +7882,20 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             <li>
               <strong>Token 成本即時剖析</strong>：
               <pre><code class="language-sql">-- 計算平均 Token 消耗與 LLM 延遲
-      SELECT
-      AVG(usage_total_tokens) as avg_tokens,
-      AVG(total_ms) as avg_llm_ms
-      FROM `your_project.agent_analytics.v_llm_response`;</code></pre>
+SELECT
+AVG(usage_total_tokens) as avg_tokens,
+AVG(total_ms) as avg_llm_ms
+FROM `your_project.agent_analytics.v_llm_response`;</code></pre>
             </li>
             <li>
               <strong>最耗時工具排行 (Bottleneck Analysis)</strong>：
               <pre><code class="language-sql">SELECT
-      tool_name,
-      COUNT(*) as call_count,
-      AVG(total_ms) as avg_latency_ms
-      FROM `your_project.agent_analytics.v_tool_completed`
-      GROUP BY tool_name
-      ORDER BY avg_latency_ms DESC;</code></pre>
+tool_name,
+COUNT(*) as call_count,
+AVG(total_ms) as avg_latency_ms
+FROM `your_project.agent_analytics.v_tool_completed`
+GROUP BY tool_name
+ORDER BY avg_latency_ms DESC;</code></pre>
             </li>
           </ol>
 
