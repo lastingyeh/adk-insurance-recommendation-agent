@@ -1,4 +1,6 @@
-# 保險推薦代理人應用程式核心 (App Core) 
+# 保險推薦代理人應用程式核心 (App Core)
+
+文件更新日期：2026-07-01
 
 本目錄包含保險推薦代理人的後端核心邏輯，基於 **Google ADK (Agent Developer Kit)**、**FastAPI** 與 **Gemini Multimodal Live API** 建構。
 
