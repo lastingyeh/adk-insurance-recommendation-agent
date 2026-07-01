@@ -1,4 +1,4 @@
-# 保險推薦代理人應用程式核心 (App Core)
+# 保險推薦代理人應用程式核心 (App Core) 
 
 本目錄包含保險推薦代理人的後端核心邏輯，基於 **Google ADK (Agent Developer Kit)**、**FastAPI** 與 **Gemini Multimodal Live API** 建構。
 
@@ -192,7 +192,7 @@ def redact_text(text: str) -> tuple[str, list[PiiFinding]]:
 
 ```python
 def save_user_profile(age: int, budget: int, tool_context: ToolContext):
-    # 將 Agent 識別到的參數寫入 ADK ToolContext.state 
+    # 將 Agent 識別到的參數寫入 ADK ToolContext.state
     tool_context.state["user:age"] = age
     tool_context.state["user:budget"] = budget
 ```
