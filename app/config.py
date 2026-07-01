@@ -106,7 +106,7 @@ def load_runtime_config() -> AppRuntimeConfig:
                 "postgresql+asyncpg://user:password@localhost:5432/insurance",
             ),
         ),
-        memory_mode=os.getenv("ADK_MEMORY_MODE", "in_memory"),
+        memory_mode=os.getenv("ADK_MEMORY_MODE", "database"),
         model_name=os.getenv("MODEL_NAME", "gemini-2.5-flash"),
         live_model_name=os.getenv(
             "LIVE_MODEL_NAME", "gemini-live-2.5-flash-preview-native-audio-09-2025"

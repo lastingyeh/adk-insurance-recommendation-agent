@@ -1,400 +1,518 @@
-# 保險推薦代理 (Insurance Recommendation Agent)
+# 保險推薦 Agent
 
-這是一個以 Google ADK、MCP (Model Context Protocol) Toolbox for Databases、FastAPI、SQLite/PostgreSQL 與 Vertex AI (Gemini 3.x/1.5 Models) 建立的高階保險推薦代理原型專案。
+這是一個以 Google ADK 為核心的保險推薦 Agent 範例專案。系統整合 FastAPI、Next.js、MCP Toolbox、PostgreSQL/pgvector 與 Gemini/Vertex AI，示範如何建立具備產品查詢、FAQ 語意搜尋、會話記憶、稽核紀錄、PII 保護，以及即時語音/影像互動能力的 AI Agent。
 
-目前專案的核心設計是：
+👉 **線上展示專案：[https://lastingyeh.github.io/adk-insurance-recommendation-agent/](https://lastingyeh.github.io/adk-insurance-recommendation-agent/)**
 
-- 由 **ADK Agent** 負責對話流程、主動追問、工具選擇、決策推理與最終合規回覆整合。
-- 由 **MCP Toolbox (Sidecar 模式)** 載入 `db/tools.yaml`，提供受控的 SQL 查詢與 FAQ 向量檢索工具，嚴格隔離資料庫邏輯。
-- 由 **FastAPI** 提供高效能、低延遲的後端 API，支援標準 REST、SSE (Server-Sent Events) 與全雙工非同步 WebSocket 雙向語音/影像串流。
-- 由 **PostgreSQL/SQLite** 儲存商品、推薦規則、FAQ 語意資料、稽核日誌與對話工作階段。
-- 具備 **多模態即時對話 (Live Mode)**，配合 Web Audio Worklet 與影像智能縮放，提供毫秒級的音訊與影像即時互動。
-- 具備 **軍規級安全性防護**，包含 PII 個人資訊即時脫敏、SHA-256 雜湊鏈鏈結的防篡改稽核日誌 (Audit Log)、以及去敏感的前端狀態過濾。
-- 具備 **全方位的可觀測性 (Observability)**，整合 OpenTelemetry 追蹤、BigQuery Analytics 分析插件與 Cloud Logging / GCS。
-- 透過 **Google ADK Evals 自動化框架**，利用 LLM-as-a-Judge 技術對 Agent 進行 5 大維度的量化回歸評估與優化。
-- 透過 **Makefile** 統一管理本地開發、多環境部署 (Terraform Dev/Staging/Prod)、測試與評估。
+這份 README 的目標是讓使用者快速完成三件事：
 
-本專案聚焦在「高可追溯、可信賴、安全受控」的保險科技 (InsurTech) 推薦流程與對話體驗，展現如何使用最新的生成式 AI 與 Agent 技術建構生產級的智慧代理系統。
+1. 了解這個專案解決什麼問題。
+2. 在本機把系統跑起來。
+3. 知道要深入架構、測試或部署時該看哪些文件。
 
----
+## 核心功能
 
-## 專案核心目標與商業場景
+- Google ADK Agent：理解保險需求、主動追問、查詢產品並產生推薦回覆。
+- MCP Toolbox：透過受控 SQL 工具查詢保險產品、推薦規則與 FAQ 知識庫。
+- FastAPI 後端：提供 REST API、SSE 串流回覆與 WebSocket 即時互動。
+- Next.js 前端：提供保險推薦對話介面、Live mode 與 Agent 狀態視覺化。
+- PostgreSQL + pgvector：儲存產品、FAQ、Session、Audit Log 與向量資料。
+- Multimodal Live Agent：支援即時語音、畫面與互動式對話。
+- 安全與合規設計：包含 JWT 驗證、PII redaction、public state filtering 與 audit hash chain。
+- 評估驅動開發：使用 ADK evalsets 驗證推薦品質、安全性、session-aware 行為與 Live mode。
+- 雲端部署準備：提供 Docker Compose、Cloud Run 與 Terraform dev/staging/prod 部署入口。
 
-1. **精準追問與需求釐清 (Proactive Clarification)**：當使用者輸入的需求不足（如未提供年齡、保障目標、保費預算）時，Agent 能夠在多輪對話中，依據引導策略主動、自然地進行精準追問，不進行盲目推薦。
-2. **受控且安全的資料庫查詢 (Controlled Database Query)**：透過 MCP Toolbox 執行嚴格受控制的 SQL Templates，避免 LLM 自由生成 SQL 語法導致的 SQL Injection 漏洞、資料庫負載過高或幻覺產生的錯誤推薦。
-3. **向量 FAQ 檢索與保險知識庫 (RAG Semantic Search)**：整合 RAG 檢索，使 Agent 能即時回答繁雜的保險條款與除外責任，並自動給予免責聲明與等待期提醒。
-4. **多模態語音/影像即時互動 (Multimodal Live Stream)**：支援全雙工 WebSocket 串流，能即時分析客戶說話語音與上傳的圖片（如健保卡或他家保單），極大化延伸至即時智慧客服、行動理賠等情境。
-5. **不可篡改的安全稽核與 PII 脫敏 (Security & Compliance)**：在數據進出 LLM 及 Audit Log 前，即時識別並脫敏 Email、電話、身分證等個人資訊；日誌採用雜湊鏈加密，確保存證能完整被核。
-6. **嚴謹的 AI 回歸評估 (Evaluation-Driven Development)**：內建多套測試集 (Evalsets)，將評估融入開發循環，確保 Prompt 調優與工具增減不會造成系統能力衰退。
+## 系統架構
 
----
-
-## 系統架構設計
-
-### 系統架構圖 (System Architecture)
-
-![arch](docs/images/archi-v2.png)
-*(系統架構包含前端 ADK Workbench、後端 FastAPI 服務、MCP Toolbox 以及 Vertex AI 模型端)*
-
-### 功能設計圖 (Feature Design)
-
-![features](docs/images/features.png)
-*(功能涵蓋對話狀態管理、安全性稽核、多模態串流處理與保險知識檢索)*
-
-### 後端責任分工與模組職責
-
-- **`app/api` (API 路由與介面層)**：FastAPI 邊界，負責 REST routes、SSE/WebSocket 串流、Request/Response Mappers 以及依賴注入綁定。
-- **`app/services` (業務邏輯服務層)**：封裝核心業務邏輯，包含：
-  - `AgentRunService`：處理標準對話執行、多輪歷史記錄與 Plugin 掛載。
-  - `LiveAgentService`：處理 WebSocket 全雙工即時串流 (Bidi-streaming)，協調上/下游非同步任務。
-  - `AuditLogService`：處理防篡改稽核日誌，實作 SHA-256 鏈結。
-  - `SessionService`：管理多輪對話與結構化 Session State 的存儲。
-- **`app/agent.py` (Agent 定義層)**：Google ADK Agent 組裝入口，定義系統提示詞 (`prompts/insurance_agent_prompt.txt`)、組件配置與 MCP 工具集。
-- **`app/container.py` (依賴注入容器)**：DI Container，集中管理 Config、Agent Runner、Session Store 與各服務的生命週期。
-- **`app/security` (安全防護層)**：處理 PII 偵測與脫敏 (Redaction)，以及狀態物件中的敏感資訊過濾 (`Public State Filter`)。
-- **`app/tools` (本地工具層)**：提供本地 Session State Tools，讓 Agent 能在多輪對話中讀寫結構化客戶狀態（如 User Profile）。
-- **`app/streaming` (串流處理)**：專門處理 Upstream (客戶端到後端) 與 Downstream (後端到客戶端) 的資料流轉換。
-
----
-
-## 關鍵技術特性與實作詳解
-
-### 1. 安全性與隱私保護 (Security & Compliance)
-- **PII Redaction (個人資訊脫敏)**：實作於 `app/security/pii.py`。自動偵測並遮蔽對話、工具呼叫及日誌中的身分證字號、手機、Email 與信用卡號。
-- **Audit Logging & Hash Chain (防篡改稽核日誌)**：實作於 `app/services/audit_log_service.py`。每個事件日誌均會計算並存入前一個事件的雜湊值 (`prev_hash`)。一旦中途日誌被篡改或刪除，雜湊鏈條即會中斷，確保存證完整性。
-- **State Filtering (狀態過濾)**：在傳回前端的狀態更新中，自動過濾並隱藏敏感資訊與內部執行細節，只將安全的 Public State 呈現給用戶。
-- **認證與授權分離 (Auth Isolation)**：
-  - 前端 (Next.js) 採用 `NEXTAUTH_SECRET` 加密 Session Cookie 與前端 JWT。
-  - 後端 (FastAPI) 採用 `JWT_SECRET` 簽發 Access Token。
-  - 雙端認證協作流程如下：
-  ```mermaid
-  sequenceDiagram
-      participant User as 使用者 (Browser)
-      participant NextAuth as NextAuth.js (Frontend)
-      participant Backend as FastAPI (Backend)
-
-      Note over User, Backend: 1. 登入階段
-      User->>NextAuth: 輸入帳號密碼 (POST /api/auth/signin)
-      NextAuth->>Backend: 轉發憑證 (POST /auth/token)
-
-      Note right of Backend: 使用 [JWT_SECRET] <br/>簽署 Access Token
-      Backend-->>NextAuth: 回傳 access_token
-
-      Note left of NextAuth: 使用 [NEXTAUTH_SECRET] <br/>加密 Session 並儲存 access_token
-      NextAuth-->>User: 設定加密的 Session Cookie
-
-      Note over User, Backend: 2. API 請求階段
-      User->>NextAuth: 瀏覽受保護頁面 / 發起 API 請求
-      Note left of NextAuth: 使用 [NEXTAUTH_SECRET] <br/>解碼 Cookie 取得 access_token
-
-      NextAuth->>Backend: 帶入 Authorization: Bearer {access_token}
-      Note right of Backend: 使用 [JWT_SECRET] <br/>驗證 Token 合法性
-
-      Backend-->>NextAuth: 回傳 API 資料
-      NextAuth-->>User: 渲染頁面與資料
-  ```
-
-### 2. 多模態即時語音對話 (Multimodal Live Agent)
-專案整合了 **Google ADK Multimodal Live API**，實現語音、文字與影像的低延遲全雙工互動：
-- **串流端點**：`/api/agent/live/ws/{session_id}`。連線時，前端將 JWT 權杖做為 Query Parameter 帶入，並傳入 `proactivity` 與 `affective_dialog` 等特徵旗標。
-- **並行任務調度**：`LiveAgentService.execute_live_session` 啟動 `upstream_task` 與 `downstream_task`，並透過 `asyncio.wait(..., return_when=asyncio.FIRST_EXCEPTION)` 監控，任一端斷線或異常，即自動觸發資源回收。
-- **上行流處理 (Upstream Flow)**：
-  - 前端 Web Audio Worklet 擷取 16k Hz 麥克風音訊，轉成 Int16 PCM 二進位流。
-  - 視訊鏡頭影格與螢幕截圖會在前端定時擷取。
-  - 後端 `upstream_task` 接收後，會先進行 **影像優化與等比例縮放**（等比例將寬度限制在 1024 像素內，轉成低頻寬 JPEG 格式），接著以 `types.Blob` 送入 `LiveRequestQueue`。
-- **下游流處理 (Downstream Flow)**：
-  - `downstream_task` 調用 ADK 的 `runner.run_live()` 啟動 Gemini Live Session。
-  - 解析傳回的音訊 PCM 片段、文字轉錄 (Transcriptions) 與工具呼叫。
-  - 遇到安全管制（`SAFETY`）或配額耗盡（`RESOURCE_EXHAUSTED`）等致命錯誤碼時，能即時切斷並向前端回報安全邊界警告。
-  - 前端接收到音訊二進位流後，經由 24k Hz 播放 Worklet 注入 Ring Buffer 平滑輸出。
-  ```mermaid
-  sequenceDiagram
-      autonumber
-      actor Client as Client (前端)
-      participant EP as live.py<br/>(FastAPI Endpoint)
-      participant LS as LiveAgentService
-      participant UT as upstream_task<br/>(Upstream Task)
-      participant DT as downstream_task<br/>(Downstream Task)
-      participant LQ as LiveRequestQueue
-      participant Runner as ADK Runner<br/>(Gemini Live API)
-
-      Client->>EP: WebSocket 升級請求 (帶入 token & session_id)
-      activate EP
-      EP->>EP: decode_access_token() 手動驗證 JWT
-      EP-->>Client: websocket.accept() (接受連線)
-      EP->>EP: 更新 Session 狀態 (proactivity/affective 旗標)
-
-      EP->>LS: execute_live_session()
-      deactivate EP
-      activate LS
-      LS->>LS: create_run_config() (配置音訊/繁中/TTS)
-      LS->>LQ: 建立 LiveRequestQueue()
-      LS->>LS: ensure_session() (確保資料庫會話紀錄)
-
-      rect rgb(240, 248, 255)
-          LS->>UT: asyncio.create_task(upstream_task)
-          activate UT
-          LS->>DT: asyncio.create_task(downstream_task)
-          activate DT
-      end
-      deactivate LS
-
-      loop 雙向互動 (上游)
-          Client->>UT: 發送音訊 PCM Bytes / 圖片 / 文字 / 影格
-          UT->>LQ: send_realtime(audio_blob) / send_content(content)
-          LQ-->>Runner: 資料流傳輸至 Live API
-      end
-
-      DT->>Runner: 執行 runner.run_live(live_request_queue)
-      loop 雙向互動 (下游)
-          Runner-->>DT: 迭代事件 event (音訊 PCM, 轉錄文字, 工具呼叫)
-          DT->>Client: event_json (序列化並發送至前端)
-      end
-  ```
-
-### 3. MCP Toolbox 與 RAG 保險條款語意搜尋
-本專案利用 MCP 概念，將資料庫與外部 API 的複雜邏輯與 LLM 本體進行物理隔離：
-- **受控 SQL 工具**：`search_medical_products`、`search_accident_products` 等工具直接在 SQLite/PostgreSQL 資料庫執行，根據年齡、預算篩選，自動回傳標有 `budget_fit` 的受控 JSON。
-- **RAG FAQ 語意檢索**：
-  - **資料結構**：原始文本存放於 `faq_knowledge`。當執行 `scripts/ingest_faq_embeddings.py` 時，調用 Vertex AI `text-embedding-004` (768 維) 將問答編碼，並寫入向量虛擬表 `vec_faq_knowledge` 中。
-  - **KNN 檢索流程**：當 Agent 調用 `search_faq_knowledge` 工具時，MCP 伺服器會攔截參數，先將查詢文字編碼為向量，再於資料庫執行 KNN (Cosine/L2 distance) 相似度比對，回傳最相關的 Top-3 問答。這能完美阻絕 SQL 注入攻擊，並避免模型幻覺。
-  ```mermaid
-  sequenceDiagram
-      autonumber
-      actor User as 使用者 (User)
-      participant Agent as 推薦智能體 (Agent)
-      participant Toolbox as Toolbox (MCP Server)
-      participant VertexAI as Vertex AI (Embedding API)
-      participant DB as SQLite (sqlite-vec)
-
-      User->>Agent: 提問：「醫療險跟意外險有什麼差別？」
-      Agent->>Agent: 判斷需要查詢保險知識庫
-
-      Agent->>Toolbox: 呼叫工具 search_faq_knowledge<br>(query_text="醫療險跟意外險有什麼差別？")
-
-      Toolbox->>VertexAI: 攔截參數 `query_text`<br>請求轉換為 Vector Embedding
-      VertexAI-->>Toolbox: 回傳 768 維度向量 [0.012, -0.053, ...]
-
-      Toolbox->>DB: 執行 SQL 查詢<br>傳入生成的向量作為 MATCH 參數
-
-      Note over DB: 步驟 1: 在 vec_faq_knowledge 中<br>計算向量距離 (KNN Search)
-      Note over DB: 步驟 2: 透過 faq_id JOIN 原表<br>faq_knowledge 取得具體文字內容
-
-      DB-->>Toolbox: 回傳最符合 the Top-3 問答 (包含 distance 距離分數)
-
-      Toolbox-->>Agent: 回傳 JSON 格式的檢索結果
-
-      Agent->>Agent: 總結檢索到的 FAQ 內容
-      Agent-->>User: 回答：「意外險主要針對突發意外事故...醫療險則是...」
-  ```
-
-### 4. 系統可觀測性 (System Observability)
-生產級的 Agent 系統必須提供極高的決策透明度，專案整合了多層次觀測架構：
-- **Agent Tracing (OpenTelemetry)**：追蹤 ADK `invoke_agent`、`generate_content` 等核心流程耗時。在 `app/tools/session_tools.py` 中，我們透過 `@tracer.start_as_current_span` 裝飾器為本地會話工具（如 `save_user_profile`、`save_last_recommendation`）加入了自定義 Trace Spans，精確度量地端/雲端協作耗時。
-- **BigQuery Agent Analytics (深度分析)**：載入 `BigQueryAgentAnalyticsPlugin` 插件，非同步且結構化地將對話的每個 Turn（包含 `LLM_REQUEST`、`LLM_RESPONSE`、`TOOL_COMPLETED` 等事件）寫入 BigQuery，實現成本加總、工具效能聚合分析、異常自動偵測。
-- **結構化日誌 (Cloud Logging & GCS)**：可透過設定 `LOGS_BUCKET_NAME` 將模型的完整輸入輸出以 JSONL 格式備份至 GCS。本地開發時可觀測性會 **優雅降級 (Graceful Degradation)**，不影響本地效能。
-
-### 5. 容器化與 DevOps 多環境隔離 (Multi-Environment IaC)
-- **Dockerfile 構建優化**：後端服務使用 `uv` 構建 Multi-stage Docker Image（`Dockerfile.backend`），縮小 Image 大小並加快啟動速度。
-- **Cloud Run Sidecar 模式**：在生產/雲端環境中，我們使用 Cloud Run Sidecar 模式，將 `Backend` 容器與 `Toolbox` 容器部署在同一個 Cloud Run 服務中。它們共享 localhost 網絡通訊，保證了 MCP 工具的安全隔離。
-- **Terraform 隔離環境**：
-  - **Local**：Docker Compose 地端沙盒。
-  - **Dev**：個人快速測試與雲端沙盒 (`deployment/terraform/dev`)。
-  - **Staging**：分支合併至 `main` 時自動構建與整合測試 (`deployment/terraform/staging`)。
-  - **Prod**：正式營運環境，基於 Git Tag 觸發自動化管線 (`deployment/terraform/prod`)。
-
----
-
-## 專案目錄結構 (Project Directory Structure)
+![系統架構](docs/images/archi-v2.png)
 
 ```text
-insurance-recommendation-agent/
-├── Makefile                    # 常用指令集 (安裝、測試、啟動、部署、評估)
-├── README.md                   # 專案總覽說明文件 (本文件)
-├── pyproject.toml              # 專案套件依賴與設定 (使用 uv)
-├── uv.lock                     # uv 依賴鎖定檔
-├── docker-compose.yml          # 本地容器化資料庫與 Toolbox 服務配置
-├── Dockerfile.backend          # 後端 API 服務的多階段構建 Dockerfile
-├── Dockerfile.toolbox          # MCP Toolbox 服務的 Dockerfile
-├── GEMINI.md                   # 專案 Coding Agent 規範指南
-├── app/                        # 後端核心程式碼
-│   ├── api/                    # FastAPI 路由、Middleware 與 Schema 定義
-│   │   ├── routes/             # REST, SSE & WebSocket 串流路由 (live.py, run.py)
-│   │   ├── dependencies.py     # 依賴注入綁定
-│   │   └── main.py             # FastAPI 啟動入口
-│   ├── app_utils/              # 遙測與部署輔助工具 (telemetry.py)
-│   ├── security/               # PII 脫敏與安全邏輯 (pii.py, auth.py)
-│   ├── services/               # 業務邏輯服務層 (AgentRun, LiveAgent, AuditLog, Session)
-│   ├── tools/                  # 本地 Session Tools 與輔助工具 (session_tools.py)
-│   ├── streaming/              # WebSocket 串流雙向處理邏輯 (upstream.py, downstream.py)
-│   ├── agent.py                # Agent 核心設定、提示詞與工具掛載
-│   └── container.py            # 依賴注入容器 (DI Container)
-├── db/                         # 資料庫與工具定義
-│   ├── schema.sql              # 保險商品、規則與 FAQ 的 SQLite/Postgres Schema
-│   ├── seed.sql                # 初始示範測試資料
-│   ├── audit_schema.sql        # 稽核日誌資料表 Schema
-│   ├── tools.local.yaml        # 本地 MCP 工具定義 (定義 SQL 模板與參數)
-│   └── tools.cloud.yaml        # 雲端 MCP 工具定義 (適用於 Sidecar 部署)
-├── deployment/                 # 部署與 IaC (Terraform, Shell scripts)
-│   ├── docs/                   # 部署與 CI/CD 設定說明文件
-│   └── terraform/              # Terraform 各環境設定 (dev, staging, prod, modules, bootstrap)
-├── docs/                       # 設計文件與架構圖
-│   ├── features/               # 詳細功能設計文件 (Backend, Frontend, Live Mode, Obs, Evals, etc.)
-│   └── images/                 # 架構圖與功能圖
-├── frontend/                   # Next.js 前端 (功能完備的 ADK Workbench)
-│   ├── app/                    # 頁面與 API 路由 (Live 互動控制台)
-│   ├── components/             # UI 元件 (WaveformVisualizer, StateTree, TimelineNodes)
-│   └── hooks/                  # 自定義多模態 Hooks (useLiveAgent, useAudioCapture)
-├── scripts/                    # 輔助腳本 (FAQ Embeddings 匯入、Seed User 建立)
-└── tests/                      # 測試與自動化評估
-    ├── api/                    # 系統整合測試
-    ├── unit/                   # 核心模組單元測試 (session, auth, user, tools)
-    ├── security/               # 安全性與隱私保護功能單元測試 (pii, audit log)
-    ├── load_test/              # Locust 負載測試
-    └── eval/                   # ADK Eval 自動化評估 (核心, 擴展, Live, 安全, Session-aware)
+Frontend (Next.js)
+    |
+    | REST / SSE / WebSocket
+    v
+FastAPI Backend
+    |
+    +-- Google ADK Runner
+    |       |
+    |       +-- Insurance Agent
+    |       +-- Session tools
+    |       +-- MCP Toolbox tools
+    |
+    +-- Session Service
+    +-- User Service
+    +-- Audit Log Service
+    +-- Live Agent Service
+    |
+    v
+PostgreSQL / pgvector
+    |
+    +-- Insurance products
+    +-- Recommendation rules
+    +-- FAQ knowledge
+    +-- Session state
+    +-- Audit logs
 ```
 
----
+![功能設計](docs/images/features.png)
 
-## 完整指令對照指南 (Makefile Command Reference)
+## 技術組成
 
-以下彙整了 `Makefile` 中可用於不同開發階段的所有快捷指令，便於快速查閱與呼叫。
+| 類別             | 技術                                 |
+| ---------------- | ------------------------------------ |
+| Agent 框架       | Google ADK                           |
+| LLM / 多模態模型 | Gemini / Vertex AI                   |
+| 後端 API         | FastAPI, Uvicorn                     |
+| 前端             | Next.js 15, React 19, NextAuth.js    |
+| 資料庫           | PostgreSQL, pgvector                 |
+| 工具層           | MCP Toolbox for Databases            |
+| 驗證             | JWT, NextAuth                        |
+| 基礎設施         | Docker Compose, Cloud Run, Terraform |
+| 測試與評估       | pytest, ADK eval, Locust             |
+| 套件管理         | uv, npm                              |
 
-### 1. 開發環境準備 (Environment Setup)
-
-| 指令 | 說明 | 備註 |
-| :--- | :--- | :--- |
-| `make help` | 列出所有可用指令及其簡短說明 | |
-| `make install` | 建立 Python 3.12 虛擬環境並安裝**核心**依賴 | 第一次設置時使用 |
-| `make install-all` | 建立虛擬環境並安裝**所有**依賴 (含 dev, eval, gcp) | 推薦完整開發與評估時使用 |
-| `make sync` | 同步核心依賴 | 已有 `.venv` 時更新使用 |
-| `make sync-all` | 同步所有依賴 | |
-| `make env-check` | 檢查必要本地工具 (uv, docker) 與 `.env` 變數 | |
-| `make playground` | 啟動互動式 Playground 進行測試 | ADK 內建 Web UI (Streamlit) |
-
-### 2. 資料庫管理 (Database Management)
-
-| 指令 | 說明 | 備註 |
-| :--- | :--- | :--- |
-| `make db-init` | 啟動本地資料庫，初始化保險 Schema, 種子資料與稽核 Schema | |
-| `make db-seed` | 建立測試使用者與基礎資料 | |
-| `make db-ingest` | 執行 FAQ 知識庫的向量嵌入與匯入 (scripts/ingest_faq_embeddings.py) | 需配置 .env Vertex AI 憑證 |
-| `make db-reset` | 刪除並重建所有本地資料庫檔案 | 一鍵重置 (會清除所有現有資料) |
-| `make clean-db` | 僅清除資料庫檔案 (`.db`) | |
-
-### 3. 本地運行與開發 (Local Development & Execution)
-
-| 指令 | 說明 | 預設位址/埠 |
-| :--- | :--- | :--- |
-| `make run-fastapi` | 啟動 FastAPI backend 伺服器 (支援熱重載) | `http://localhost:8080` |
-| `make debug-fastapi` | 啟動具有 VS Code 偵錯 (`debugpy`) 支援的後端 | 埠 `5678` |
-| `make ui-install` | 安裝前端 Next.js 依賴套件 | |
-| `make ui-dev` | 啟動 Next.js 模擬前端 UI (ADK Workbench) | `http://localhost:3000` |
-| `make run-web` | 以 ADK 內建 Web UI 啟動 Agent | 埠 `8000` |
-| `make run-cli` | 以 CLI 互動對話模式啟動 Agent | 終端機直接輸入 |
-
-### 4. 測試與安全性驗證 (Testing & Security Verification)
-
-| 指令 | 說明 |
-| :--- | :--- |
-| `make check` | 執行所有 Python 單元與整合測試 (pytest) |
-| `make test-api` | 專門執行 FastAPI API 路由相關整合測試 |
-| `make test-security` | 執行安全性 (PII 脫敏、Public State Filter) 的單元測試 |
-| `make test-audit` | 驗證防篡改雜湊鏈 Audit Log 儲存與驗證邏輯 |
-
-### 5. 容器化工具 (Containerized Services)
-
-| 指令 | 說明 |
-| :--- | :--- |
-| `make up` | 啟動本地所有 Sidecar 服務 (SQLite, db, toolbox) (背景執行) |
-| `make up-build` | 強制重建並啟動本地 Sidecar 服務 (背景執行) |
-| `make down` | 停止並移除所有 Docker Compose 容器與網絡 |
-| `make logs` | 查看本地容器的即時日誌 |
-
-### 6. 雲端部署 (Cloud Deployment)
-
-#### Terraform IaC
-| 指令 | 說明 |
-| :--- | :--- |
-| `make tf-gen-config` | 根據環境變數自動生成 Terraform Backend 遠端狀態配置檔 (`.tfbackend`) |
-| `make tf-init ENV_NAME=dev` | 初始化 dev 環境的 Terraform 工作區 |
-| `make tf-plan ENV_NAME=dev` | 預覽 dev 環境的雲端資源變更 |
-| `make tf-apply ENV_NAME=dev` | 部署 dev 環境資源到 GCP (建立 Cloud Run, SQL, Secret) |
-| `make tf-destroy ENV_NAME=dev` | 銷毀 dev 環境的所有雲端資源 (請謹慎使用) |
-
-#### GCP 輔助與流量管理
-| 指令 | 說明 |
-| :--- | :--- |
-| `make build-push` | 建置 Docker 映像檔並推送到 GCP Artifact Registry |
-| `make gcp-deploy` | 一鍵執行完整部署流程 (Build + Push + CLI Deploy) |
-| `make gcp-traffic-list` | 查看 Cloud Run 目前的流量分配與版本名稱 |
-| `make gcp-rollback` | 將 Cloud Run 的流量一鍵退回到上一個穩定版本 |
-| `make gcp-canary` | 設定 Canary 漸進式流量 (參數: `REV=[版本名] PER=[百分比]`) |
-
-### 7. 清理與維護 (Clean up)
-
-| 指令 | 說明 |
-| :--- | :--- |
-| `make clean` | 清除 Python 編譯快取與測試暫存檔 (`__pycache__`, `.pytest_cache`) |
-| `make clean-sessions` | 清除本地 ADK 的對話工作階段 (Session DB) |
-| `make clean-all` | **極致清理**：包含快取、本地資料庫、Session 資料及 `.venv` 虛擬環境 |
-
----
-
-## 測試與評估機制 (Testing & Evaluations)
-
-### 1. 自動化回歸評估 (ADK Evals & LLM-as-a-Judge)
-傳統的單元測試難以驗證大語言模型的生成品質、意圖理解與工具呼叫順序。本專案使用 Google ADK 內建的 **Evals 框架**。
-- **評估流程**：
-  1. 在 `tests/eval/configs/test_config.json` 設定評判標準與 Judges (例如 `gemini-1.5-pro` 作為裁判)。
-  2. 在 `tests/eval/evalsets/` 下的多個目錄，定義測試案例（包含 user input 與 golden output / expected tools）。
-  3. 呼叫 `adk eval` 或 `make` 批量執行，產出 `eval_results.json` 並匯總評分與反饋，用於 Prompt 工程與工具微調。
-- **5 大評估維度與指令**：
-  - **核心流程 (Core)**：`make eval-core`
-    - 驗證基礎保單推薦、資訊不足時追問與商品規則匹配。
-  - **擴展情境 (Extended)**：`make eval-extended`
-    - 驗證預算極低、特定高危職業、或完全無合適匹配商品時的處理邏輯。
-  - **安全性與合規 (Safety)**：`make eval-safety`
-    - 驗證 Agent 不洩漏 PII、不虛假承諾回報率、遵守免責邊界及避免偏激言論。
-  - **會話感知 (Session-Aware)**：`make eval-session-aware`
-    - 驗證 Agent 跨輪對話中，是否能重複讀取、更新並引用已記錄的 User Profile 與歷史推薦。
-  - **即時互動 (Live)**：`make eval-live`
-    - 驗證在低延遲 Live WebSocket 語音對話下的同理心對話、情緒反應與主動打斷。
-- **全域評估**：
-  - 執行 `make eval-all` 遍歷所有測試集並產出完整報告。
-
-### 2. 安全性單元測試
-執行 `pytest tests/security`，對 PII 偵測與脫敏、前端 Public State Filter、以及 Audit Log SHA-256 雜湊鏈進行極限驗證。
-
----
-
-## 推薦與執行流程摘要
+## 專案目錄
 
 ```text
-  [ 使用者提問 ]
-         │
-         ▼
- 1. [ PII 即時脫敏 ] ─────────────────► 2. [ 結構化 Session 載入 ]
-         │                                       │
-         ▼                                       ▼
- 3. [ 系統提示詞引導 ] ◄───────────────── 4. [ 決策推理與判斷 ]
-         │ (判斷資訊是否充足？)
-         ├─────────────────── 不足 (缺失年齡/預算)
-         │                     │
-         ▼                     ▼
- 5. [ 呼叫 MCP SQL/RAG 工具 ]    [ 引導追問策略 / 免責聲明 ]
-         │ (資料庫受控查詢)            │
-         ▼                            ▼
- 6. [ 商品規則匹配與分析 ]        [ 生成最終對話回應 ]
-         │                            │
-         ▼                            ▼
- 7. [ 雜湊鏈 Audit Log 紀錄 ]     [ PII 脫敏 & 狀態過濾 ]
-         │                            │
-         ▼                            ▼
-  [ 儲存 Session 狀態 ]          [ 前端 WebSocket/REST 渲染 ]
+.
+├── app/                         # 後端 Agent 與 FastAPI 應用程式
+│   ├── api/                     # REST、SSE、WebSocket 路由與資料格式
+│   ├── app_utils/               # Telemetry 與部署輔助工具
+│   ├── prompts/                 # Agent system prompt
+│   ├── security/                # 驗證、PII 保護與 public state filtering
+│   ├── services/                # Agent 執行、Live mode、Session、User 與 Audit Log 服務
+│   ├── streaming/               # WebSocket upstream/downstream 處理
+│   ├── tools/                   # ADK session tools
+│   ├── agent.py                 # Agent factory 與 ADK app 註冊
+│   ├── config.py                # 執行時設定
+│   └── container.py             # Dependency container
+├── db/                          # 資料庫 schema、seed data 與 MCP Toolbox 設定
+├── deployment/                  # Terraform 與部署文件
+├── docs/                        # 架構與功能文件
+├── frontend/                    # Next.js 前端應用程式
+├── scripts/                     # 設定、資料建立與 FAQ ingestion 腳本
+├── tests/                       # Unit、integration、security、API、load 與 eval 測試｀
+├── docker-compose.yml           # 本機容器編排
+├── Dockerfile.backend           # 後端容器映像設定
+├── Dockerfile.toolbox           # Toolbox 容器映像設定
+├── Makefile                     # 主要開發指令入口
+├── pyproject.toml               # Python 專案設定與依賴
+└── .env.example                 # 環境變數範本
 ```
 
----
+## 前置需求
+
+本專案本機開發需準備以下工具、套件與環境。詳細 macOS 本機安裝與核准檢核，請參閱完整的 [環境安裝與核准檢查清單 (setup-env.md)](docs/setup/setup-env.md)。
+
+### 📋 必備工具與套件 (Required Tools & Dependencies)
+- Python 3.12
+- uv
+- Node.js 20 或更新版本
+- npm
+- Docker 與 Docker Compose
+- Google Cloud credentials：使用 Vertex AI、embedding、雲端部署或 Toolbox 語意搜尋時需要
+
+
+先建立本機環境設定檔：
+
+```bash
+cp .env.example .env
+```
+
+接著依照你的環境修改 `.env`。
+
+## 快速開始
+
+### 方式一：使用 Docker Compose 啟動
+
+如果你想一次啟動資料庫、Toolbox、後端與前端，建議使用這個方式。
+
+```bash
+cp .env.example .env
+make up-build
+```
+
+啟動後可開啟：
+
+```text
+前端介面：http://localhost:3000
+後端 API：http://localhost:8080
+健康檢查：http://localhost:8080/healthz
+就緒檢查：http://localhost:8080/readyz
+```
+
+停止服務：
+
+```bash
+make down
+```
+
+查看服務紀錄：
+
+```bash
+make logs
+```
+
+### 方式二：分開啟動服務
+
+如果你正在開發後端或前端，建議用這個方式。
+
+```bash
+cp .env.example .env
+make install-all
+make db-up
+make db-seed
+make db-ingest
+```
+
+啟動後端：
+
+```bash
+make run-fastapi
+```
+
+在另一個終端機啟動前端：
+
+```bash
+make ui-install
+make ui-dev
+```
+
+開啟：
+
+```text
+前端介面：http://localhost:3000
+後端 API：http://localhost:8080
+```
+
+## 環境變數
+
+應用程式會從環境變數讀取執行設定。請以 `.env.example` 為範本。
+
+| 變數                             | 用途                                                      |
+| -------------------------------- | --------------------------------------------------------- |
+| `GOOGLE_GENAI_USE_VERTEXAI`      | 設為 `1` 時使用 Vertex AI。                               |
+| `GOOGLE_CLOUD_PROJECT`           | Google Cloud project ID。                                 |
+| `GOOGLE_CLOUD_LOCATION`          | Google Cloud region，例如 `us-central1`。                 |
+| `GOOGLE_API_KEY`                 | 本機使用 API key 模式時的 Google GenAI API key。          |
+| `GOOGLE_APPLICATION_CREDENTIALS` | 需要 service account 時使用的憑證檔案路徑。               |
+| `ADK_APP_NAME`                   | ADK application name，預設為 `app`。                      |
+| `DATABASE_URL`                   | 容器或部署環境使用的主要資料庫 URL。                      |
+| `ADK_SESSION_DB_URI`             | ADK Session service 使用的資料庫 URL。                    |
+| `ADK_MEMORY_MODE`                | 設為 `in_memory` 可使用非持久化 session；預設使用資料庫。 |
+| `MODEL_NAME`                     | 文字推薦模型，預設為 `gemini-2.5-flash`。                 |
+| `LIVE_MODEL_NAME`                | WebSocket Live mode 使用的多模態模型。                    |
+| `TOOLBOX_SERVER_URL`             | MCP Toolbox server URL。                                  |
+| `JWT_SECRET`                     | 後端 JWT signing secret；正式環境請使用高強度值。         |
+| `NEXTAUTH_SECRET`                | 前端 NextAuth secret；正式環境請使用高強度值。            |
+| `AUDIT_LOG_ENABLED`              | 設為 `1` 時啟用 audit logging。                           |
+| `AUDIT_DB_PATH`                  | Audit log 使用的資料庫 URL。                              |
+| `AUDIT_HASH_SALT`                | Audit hash chain 與敏感資料雜湊使用的 salt。              |
+| `PII_REDACTION_ENABLED`          | 設為 `1` 時啟用 PII redaction。                           |
+| `ENABLE_CLOUD_TRACING`           | 啟用後將 trace 傳送到 Google Cloud Trace。                |
+| `ENABLE_CLOUD_LOGGING`           | 啟用後將 log 傳送到 Google Cloud Logging。                |
+| `BQ_ANALYTICS_DATASET`           | 設定後啟用 BigQuery Agent Analytics plugin。              |
+
+## 常用開發指令
+
+大部分常見工作都可以透過 Makefile 執行。
+
+| 指令               | 說明                                                  |
+| ------------------ | ----------------------------------------------------- |
+| `make help`        | 顯示可用指令。                                        |
+| `make install`     | 建立 Python 3.12 virtual environment 並安裝核心依賴。 |
+| `make install-all` | 安裝核心、dev、eval 與 GCP 依賴。                     |
+| `make sync`        | 同步 Python 依賴。                                    |
+| `make env-check`   | 檢查本機工具與環境設定。                              |
+| `make db-up`       | 啟動本機 PostgreSQL 與 MCP Toolbox 容器。             |
+| `make db-setup`    | 啟動資料庫、建立測試使用者並匯入 FAQ embeddings。     |
+| `make run-fastapi` | 在 port 8080 啟動 FastAPI 後端。                      |
+| `make ui-install`  | 安裝前端依賴。                                        |
+| `make ui-dev`      | 在 port 3000 啟動 Next.js 前端。                      |
+| `make up`          | 啟動所有 Docker Compose 服務。                        |
+| `make up-build`    | 重新建置並啟動所有 Docker Compose 服務。              |
+| `make down`        | 停止 Docker Compose 服務。                            |
+| `make logs`        | 追蹤 Docker Compose logs。                            |
+| `make clean`       | 清除 Python cache 與 pytest cache。                   |
+| `make clean-all`   | 清除產生的 cache 與本機 virtual environment。         |
+
+## API 概覽
+
+後端提供健康檢查、驗證、Session 管理、Agent SSE 串流與 Live Agent WebSocket API。
+
+| 方法     | 路徑                                                     | 用途                                         |
+| -------- | -------------------------------------------------------- | -------------------------------------------- |
+| `GET`    | `/healthz`                                               | 基本健康檢查。                               |
+| `GET`    | `/readyz`                                                | 檢查 Session store、Toolbox 等依賴是否就緒。 |
+| `POST`   | `/auth/token`                                            | 登入並取得 JWT access token。                |
+| `POST`   | `/api/agent/run`                                         | 執行 Agent，並透過 SSE 回傳串流結果。        |
+| `GET`    | `/apps/{app_name}/users/{user_id}/sessions`              | 列出使用者 sessions。                        |
+| `POST`   | `/apps/{app_name}/users/{user_id}/sessions`              | 建立或初始化 session。                       |
+| `GET`    | `/apps/{app_name}/users/{user_id}/sessions/{session_id}` | 取得指定 session。                           |
+| `DELETE` | `/apps/{app_name}/users/{user_id}/sessions/{session_id}` | 刪除指定 session。                           |
+| `WS`     | `/api/agent/live/ws/{session_id}`                        | 啟動多模態 Live Agent session。              |
+
+使用者、Session 與 Agent endpoint 都需要驗證。前端會透過 `/auth/token` 取得 token，並在後續請求中轉送給後端。
+
+## 前端
+
+前端位於 `frontend/`，使用 Next.js 與 NextAuth。
+
+常用指令：
+
+```bash
+make ui-install
+make ui-dev
+make ui-build
+```
+
+重要目錄：
+
+- `frontend/app/`：頁面路由與 API proxy routes。
+- `frontend/components/`：主要 UI 元件，包含 user mode、workbench、waveform、state tree 與 timeline views。
+- `frontend/hooks/`：audio、camera、screen capture 與 Live Agent hooks。
+- `frontend/lib/`：proxy、markdown、mock data、session storage 與 auth recovery helpers。
+
+## 資料庫與 MCP Toolbox
+
+資料庫相關檔案位於 `db/`。
+
+| 檔案                  | 用途                                          |
+| --------------------- | --------------------------------------------- |
+| `db/schema.sql`       | 產品、推薦規則、FAQ 與向量資料的主要 schema。 |
+| `db/audit_schema.sql` | Audit log schema。                            |
+| `db/seed.sql`         | 本機開發使用的 seed data。                    |
+| `db/tools.local.yaml` | 本機 MCP Toolbox tool definitions。           |
+| `db/tools.cloud.yaml` | 雲端 MCP Toolbox tool definitions。           |
+
+MCP Toolbox 提供的受控工具包含：
+
+- `search_medical_products`
+- `search_accident_products`
+- `search_family_protection_products`
+- `search_income_protection_products`
+- `get_product_detail`
+- `get_recommendation_rules`
+- `search_faq`
+
+匯入 FAQ embeddings：
+
+```bash
+make db-ingest
+```
+
+## 安全與合規
+
+專案包含以下安全與合規設計：
+
+- 使用 JWT 驗證後端 API 存取。
+- 在受保護 endpoint 檢查 user/session ownership。
+- 透過 `app/security/pii.py` 進行 PII redaction。
+- 使用 public state filtering，避免敏感 session data 外洩到前端。
+- 透過 `app/services/audit_log_service.py` 記錄 audit logs。
+- 支援 audit hash chain，讓稽核紀錄具備防竄改檢查能力。
+- 可設定 audit retention 與 hashing salt。
+
+正式環境請務必替換本機範例 secret：
+
+```text
+JWT_SECRET
+NEXTAUTH_SECRET
+AUDIT_HASH_SALT
+DATABASE_URL
+AUDIT_DB_PATH
+```
+
+不要提交 `.env`、service account key 或任何產生的 secret 檔案。
+
+## 測試
+
+執行完整 Python 測試：
+
+```bash
+make check
+```
+
+執行特定測試群組：
+
+```bash
+make test-api
+make test-security
+make test-audit
+```
+
+測試涵蓋 unit、integration、API、security、load 與 eval，主要位於 `tests/`。
+
+## 評估
+
+ADK evalsets 位於 `tests/eval/evalsets/`。
+
+執行預設評估：
+
+```bash
+make eval
+```
+
+執行所有評估：
+
+```bash
+make eval-all
+```
+
+執行特定評估群組：
+
+```bash
+make eval-core
+make eval-extended
+make eval-safety
+make eval-session-aware
+make eval-live
+```
+
+評估範圍包含核心推薦、延伸情境、安全行為、session-aware memory 與 Live mode 互動。
+
+## 部署
+
+部署相關檔案位於 `deployment/`。
+
+| 路徑                                                 | 用途                                          |
+| ---------------------------------------------------- | --------------------------------------------- |
+| `deployment/docs/`                                   | 部署、CI/CD 與環境文件。                      |
+| `deployment/terraform/bootstrap/`                    | GitHub / Cloud Build 等 bootstrap resources。 |
+| `deployment/terraform/dev/`                          | Dev environment Terraform。                   |
+| `deployment/terraform/staging/`                      | Staging environment Terraform。               |
+| `deployment/terraform/prod/`                         | Production environment Terraform。            |
+| `deployment/terraform/modules/agent_infrastructure/` | 共用 infrastructure module。                  |
+
+常用部署指令：
+
+```bash
+make tf-gen-config
+make tf-plan ENV_NAME=dev
+make tf-apply ENV_NAME=dev
+make build-push
+make gcp-deploy ENV_NAME=dev
+```
+
+部署前，請在 `.env` 設定必要的 GCP 變數：
+
+```text
+GOOGLE_CLOUD_PROJECT
+GOOGLE_CLOUD_LOCATION
+ARTIFACT_REPOSITORY
+ENV_NAME
+GITHUB_OWNER
+GITHUB_REPO_NAME
+```
+
+## 常見問題
+
+### 缺少 `.env`
+
+從範本建立：
+
+```bash
+cp .env.example .env
+```
+
+### 後端尚未就緒
+
+檢查：
+
+```text
+http://localhost:8080/readyz
+```
+
+如果 readiness check 失敗，確認 PostgreSQL 與 MCP Toolbox 已啟動：
+
+```bash
+make db-up
+make toolbox-logs
+```
+
+### 前端連不到後端
+
+檢查以下變數：
+
+```text
+NEXT_PUBLIC_API_URL
+FASTAPI_BASE_URL
+FASTAPI_BASE_URL_DOCKER
+NEXTAUTH_URL
+```
+
+本機瀏覽器通常使用：
+
+```text
+http://localhost:8080
+```
+
+### 登入或驗證失敗
+
+先確認測試使用者已建立：
+
+```bash
+make db-seed
+```
+
+也請確認 `JWT_SECRET` 與 `NEXTAUTH_SECRET` 在後端與前端設定一致。
+
+### FAQ 語意搜尋失敗
+
+確認 Google credentials 已設定，並且 FAQ embeddings 已匯入：
+
+```bash
+make db-ingest
+```
+
+### Port 已被占用
+
+預設 port 如下：
+
+```text
+前端：3000
+後端：8080
+Toolbox：5001
+PostgreSQL：5432
+```
+
+請停止占用服務，或在 `.env` 中調整對應 port 變數。
+
+## 文件索引
+
+- 後端架構：`docs/features/backend-agent-design.md`
+- 前端設計：`docs/features/frontend.md`
+- 即時串流架構：`docs/features/live-streaming-architecture.md`
+- MCP Toolbox 與資料庫工具：`docs/features/mcp-toolboxs.md`
+- Observability：`docs/features/obs.md`
+- Evaluation：`docs/features/evaluation.md`
+- Testing：`docs/features/testing.md`
+- 部署指南：`deployment/docs/README.md`
+- 開發與部署計畫：`deployment/docs/plan.md`
+- CI/CD 說明：`deployment/docs/cicd.md`
+- Workload Identity Federation 設定：`deployment/docs/wif-setup.md`
+
+## 貢獻方式
+
+提交變更前，建議先執行：
+
+```bash
+make check
+make test-security
+make eval
+```
+
+程式品質檢查：
+
+```bash
+make lint
+```
+
+如果修改 Agent 行為，請同步新增或更新 `tests/eval/evalsets/` 中的 evalset，讓推薦品質與安全行為可以被持續驗證。
+
+## 授權
+
+可自由使用、修改與散布程式碼，但若分享完整程式碼請註明出處喔 ^^。
 
 ## 免責聲明
 

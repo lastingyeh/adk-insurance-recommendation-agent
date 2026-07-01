@@ -13,7 +13,7 @@ endif
 	run-web run-api run-cli run-fastapi debug-fastapi \
 	ui-install ui-dev ui-build \
 	_kill-adk-port _kill-fastapi-port _kill-ui-port _kill-port \
-	check test-api test-security test-audit \
+	check check-setup test-api test-security test-audit \
 	tf-bootstrap tf-bootstrap-destroy tf-init tf-plan tf-apply tf-destroy tf-db-password \
 	tf-gen-config build-push env-check-gcp gcp-db-proxy gcp-db-init-info gcp-db-setup \
 	gcp-bootstrap gcp-cleanup-orphans gcp-deploy gcp-traffic-list gcp-rollback \
@@ -155,7 +155,7 @@ db-seed: ## 執行資料庫填充 (建立測試帳號)
 db-ingest: ## 執行知識庫向量化 (FAQ Ingestion)
 	@$(PYTHON) scripts/ingest_faq_embeddings.py
 
-db-setup: db-init db-seed db-ingest ## 完整資料庫初始化 (啟 জলা動 + Seed + Ingest)
+db-setup: db-init db-seed db-ingest ## 完整資料庫初始化 (啟動 + Seed + Ingest)
 	@echo "資料庫設定完成！"
 
 db-clean: ## 僅清除資料庫 Volume（保留容器設定）
@@ -266,6 +266,9 @@ _kill-port: ## (內部) 釋放指定 PORT 佔用的程序
 
 # ─── 測試 ──────────────────────────────────────────────────
 
+check-setup: ## 執行環境安裝驗證並確認本機配置
+	@./scripts/check_setup.sh
+
 check: ## 執行測試（需要 dev extra）
 	$(PYTHON) -m pytest tests/ -v
 
@@ -373,7 +376,7 @@ gcp-db-setup: ## 一鍵自動初始化雲端資料庫 (啟動 Proxy + 執行 SQL
 	echo "0. 準備 Docker 網路與憑證..."; \
 	docker network create gcp-db-setup-net 2>/dev/null || true; \
 	trap "docker rm -f cloud-sql-proxy 2>/dev/null || true; docker network rm gcp-db-setup-net 2>/dev/null || true; rm -f /tmp/adc_db_setup.json" EXIT; \
-	if [ -f .env ]; then export $$(grep GOOGLE_APPLICATION_CREDENTIALS .env | xargs); fi; \
+	if [ -f .env ]; then export $$(grep -E '^[[:space:]]*GOOGLE_APPLICATION_CREDENTIALS=' .env | xargs); fi; \
 	if [ -n "$$GOOGLE_APPLICATION_CREDENTIALS" ] && [ -f "$$GOOGLE_APPLICATION_CREDENTIALS" ]; then \
 		cp "$$GOOGLE_APPLICATION_CREDENTIALS" /tmp/adc_db_setup.json; \
 	else \
@@ -384,7 +387,7 @@ gcp-db-setup: ## 一鍵自動初始化雲端資料庫 (啟動 Proxy + 執行 SQL
 	docker run -d --name cloud-sql-proxy --network gcp-db-setup-net -p 5432:5432 -v /tmp/adc_db_setup.json:/adc.json:ro -e GOOGLE_APPLICATION_CREDENTIALS=/adc.json gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.14.3 "$$CONNECTION_NAME" --port 5432 --address 0.0.0.0 > /dev/null 2>&1; \
 	echo "等待 Proxy 就緒與網路解析..."; \
 	for i in {1..20}; do \
-		if docker run --rm --network gcp-db-setup-net postgres:16-alpine nc -z cloud-sql-proxy 5432 >/dev/null 2>&1; then \
+		if docker run --rm --network gcp-db-setup-net postgres:16-alpine pg_isready -h cloud-sql-proxy -p 5432 -U "$$DB_USER" >/dev/null 2>&1; then \
 			echo "Proxy 已就緒！"; \
 			break; \
 		fi; \

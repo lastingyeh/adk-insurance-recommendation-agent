@@ -50,7 +50,7 @@
    ```
 
    **💡 專家提示：**
-   *   您可以使用 `make setup-dev-env` 一鍵執行 `tf-init` 與 `tf-apply`。
+   *   您可以直接執行 `make tf-apply`，它會自動先跑 `tf-init` 再 apply（無需分開執行）。
    *   您可以使用 `make gcp-deploy` 一鍵執行 `build-push` 與 `tf-apply`。
 
 4. **部署架構摘要：**

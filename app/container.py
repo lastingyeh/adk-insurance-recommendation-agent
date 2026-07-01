@@ -29,9 +29,13 @@ Google ADK 核心 (Agent, Runner) 以及業務邏輯層 (Services) 組裝在一�
 def create_session_store(config: AppRuntimeConfig) -> BaseSessionService:
     """
     【元件工廠】：根據配置建立 ADK 所需的對話狀態儲存服務。
-    目前統一使用 DatabaseSessionService，支援與 PostgreSQL 等關聯式資料庫連線，
-    提供生產環境等級的持久化能力。
+    支援讀取 ADK_MEMORY_MODE 環境變數，當設定為 'in_memory' 時使用 InMemorySessionService，
+    否則預設使用 DatabaseSessionService 進行 PostgreSQL 持久化儲存。
     """
+    if config.memory_mode == "in_memory":
+        from google.adk.sessions import InMemorySessionService
+
+        return InMemorySessionService()
     return DatabaseSessionService(db_url=config.session_db_uri)
 
 

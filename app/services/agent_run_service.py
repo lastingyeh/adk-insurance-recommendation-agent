@@ -15,6 +15,7 @@ from google.adk.runners import Runner
 from google.genai import types as genai_types
 
 from app.config import AppRuntimeConfig
+from app.security.pii import redact_text
 from app.services.audit_log_service import AuditContext, AuditLogService
 from app.services.session_service import SessionService, safe_stringify
 
@@ -107,8 +108,15 @@ def is_echoed_user_input(event: Event, prompt: str) -> bool:
 def build_user_message_content(
     prompt: str, image: str | None = None, image_type: str | None = None
 ) -> genai_types.Content:
-    """建構適合傳遞給 Google GenAI SDK 的使用者訊息內容，支援多模態圖片輸入。"""
-    parts = [genai_types.Part(text=prompt)]
+    """建構適合傳遞給 Google GenAI SDK 的使用者訊息內容，支援多模態圖片輸入。
+
+    安全性：這是使用者訊息實際送往第三方 LLM (Gemini) 的唯一咽喉點，
+    因此在此對 prompt 做 PII 去敏。原本明文的電話 / email / 身分證 /
+    信用卡會在這裡被換成 [REDACTED_*] 佔位字，避免明文 PII 外送給 LLM。
+    去敏為冪等操作，呼叫端若已先去敏也不會造成二次破壞。
+    """
+    redacted_prompt, _findings = redact_text(prompt)
+    parts = [genai_types.Part(text=redacted_prompt)]
     if image and image_type:
         # 如果有圖片，將 Base64 編碼的圖片解碼並封裝為 Blob
         parts.append(
@@ -500,6 +508,13 @@ class AgentRunService:
         total_text = ""  # 累積所有步驟的總文字，作為最終回覆
         step_text = ""  # 當前步驟（一次生成回合）累積的文字
         merged_state = dict(session_state or {})
+
+        # 在進入任何下游流程前先去敏 prompt：
+        # 1. 送往 LLM 的訊息不含明文 PII（build_user_message_content 也會再去敏，冪等）。
+        # 2. is_echoed_user_input 以去敏後文字比對 ADK 回顯，避免含 PII 的
+        #    使用者訊息以回顯形式漏到前端 timeline。
+        # 3. 稽核記錄到的 prompt 與實際送出的內容一致。
+        prompt, _prompt_pii = redact_text(prompt)
 
         resolved_user_id = (
             user_id.strip() if user_id and user_id.strip() else self._config.api_user_id

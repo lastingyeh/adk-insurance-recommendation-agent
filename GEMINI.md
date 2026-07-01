@@ -4,12 +4,15 @@
 
 If you have ADK skills available, use those instead of fetching the URLs below.
 
-Otherwise, fetch these resources as needed:
-- **ADK Cheatsheet**: https://raw.githubusercontent.com/GoogleCloudPlatform/agent-starter-pack/refs/heads/main/agent_starter_pack/resources/docs/adk-cheatsheet.md — Agent definitions, tools, callbacks, orchestration
-- **Evaluation Guide**: https://raw.githubusercontent.com/GoogleCloudPlatform/agent-starter-pack/refs/heads/main/agent_starter_pack/resources/docs/adk-eval-guide.md — Eval config, metrics, gotchas
-- **Deployment Guide**: https://raw.githubusercontent.com/GoogleCloudPlatform/agent-starter-pack/refs/heads/main/agent_starter_pack/resources/docs/adk-deploy-guide.md — Infrastructure, CI/CD, testing deployed agents
-- **Development Guide**: https://raw.githubusercontent.com/GoogleCloudPlatform/agent-starter-pack/refs/heads/main/docs/guide/development-guide.md — Full development workflow
-- **ADK Docs**: https://google.github.io/adk-docs/llms.txt
+Otherwise, consult these resources as needed:
+
+| 資源名稱 (Resource) | 連結層 (GitHub Web Link) | 說明 (Description) |
+| :--- | :--- | :--- |
+| **ADK Cheatsheet** | [adk-cheatsheet.md](https://github.com/GoogleCloudPlatform/agent-starter-pack/blob/main/agent_starter_pack/resources/docs/adk-cheatsheet.md) | 快速查詢 Agent 定義、Tool/Callback 宣告與 Orchestration 程式碼。 |
+| **Evaluation Guide** | [adk-eval-guide.md](https://github.com/GoogleCloudPlatform/agent-starter-pack/blob/main/agent_starter_pack/resources/docs/adk-eval-guide.md) | 指標打分、環境模擬與 User Simulation 的深度解密。 |
+| **Deployment Guide** | [adk-deploy-guide.md](https://github.com/GoogleCloudPlatform/agent-starter-pack/blob/main/agent_starter_pack/resources/docs/adk-deploy-guide.md) | WIF 安全配置、CI/CD 觸發器與 Secret Manager 整合的最佳實踐。 |
+| **Development Guide** | [development-guide.md](https://github.com/GoogleCloudPlatform/agent-starter-pack/blob/main/docs/guide/development-guide.md) | 完整開發工作流、開發階段指引與最佳實踐說明。 |
+| **ADK Docs** | [adk.dev (Portal)](https://adk.dev) | 官方文件入口，提供全面概念、最新 SDK 起步說明。 |
 
 ---
 
@@ -42,7 +45,7 @@ Ask the user: Option A (simple single-project) or Option B (full CI/CD pipeline 
 | `make eval` | Run evaluation against evalsets |
 | `make eval-all` | Run all evalsets |
 | `make lint` | Check code quality |
-| `make setup-dev-env` | Set up dev infrastructure (Terraform) |
+| `make tf-apply` | Set up dev infrastructure (Terraform; runs tf-init first) |
 | `make deploy` | Deploy to dev |
 
 ---

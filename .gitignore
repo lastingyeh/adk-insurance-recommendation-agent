@@ -20,6 +20,8 @@ node_modules/
 .next/
 frontend/.env.local
 frontend/.vercel/
+# TypeScript 增量編譯快取（build 產物，不該進版控）
+*.tsbuildinfo
 
 # Environment variables
 .env
@@ -98,3 +100,6 @@ graphify-out/*
 
 # graphify-visualization
 /graphify-out/*
+
+# plans
+docs/plans/**

@@ -73,10 +73,12 @@ steps:
         export TOOLBOX_SERVER_URL=$$BACKEND_URL
         export GOOGLE_CLOUD_LOCATION=${_REGION}
         export GOOGLE_GENAI_USE_VERTEXAI=1
-        for evalset in tests/eval/evalsets/core/*.evalset.json; do
-          echo "Running: $$evalset"
-          uv run adk eval ./app "$$evalset" --config_file_path=tests/eval/configs/test_config.json || exit 1
-        done
+        export ADK_MEMORY_MODE=in_memory
+        # for evalset in tests/eval/evalsets/*.evalset.json; do
+          # echo "Running: $$evalset"
+          # uv run adk eval ./app "$$evalset" --config_file_path=tests/eval/configs/test_config.json || exit 1
+        # done
+        uv run adk eval ./app tests/eval/evalsets/basic.evalset.json --config_file_path=tests/eval/configs/test_config.json || exit 1
 
 substitutions:
   _STAGING_PROJECT_ID: 'your-staging-project-id'

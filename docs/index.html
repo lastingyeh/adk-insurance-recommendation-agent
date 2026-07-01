@@ -19,6 +19,116 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
     <!-- Pre-compiled Static SVGs for zero runtime overhead & crisp scaling -->
     <style>
+      /* GitHub 原始碼連結（包覆 <code> 與 SVG 圖表標籤） */
+      a.gh-src {
+        text-decoration: none;
+        cursor: pointer;
+      }
+      /* hover：整個 code 框一起變色（邊框轉藍、淡藍底），與框框一體 */
+      a.gh-src code {
+        transition:
+          background 0.12s,
+          border-color 0.12s,
+          color 0.12s;
+      }
+      a.gh-src:hover code {
+        background: var(--color-note);
+        border-color: var(--color-primary);
+        color: var(--color-primary-dark);
+      }
+      /* 內文連結加上 ↗ 提示可點 */
+      a.gh-src::after {
+        content: "↗";
+        font-size: 0.7em;
+        vertical-align: super;
+        margin-left: 1px;
+        color: var(--color-primary);
+      }
+      a.gh-src:hover::after {
+        color: var(--color-primary-dark);
+      }
+      /* 程式碼區塊內的 make 連結：無箭頭，hover 顯示底線（無 code 框） */
+      .codelab-step pre a.gh-src::after {
+        content: none;
+      }
+      .codelab-step pre a.gh-src:hover {
+        text-decoration: underline;
+        text-underline-offset: 3px;
+      }
+      /* SVG 圖表內的連結不加箭頭 */
+      svg a.gh-src::after {
+        content: none;
+      }
+      /* 可點擊的章節標題（外部連結，保留標題感 + ↗ 提示） */
+      a.title-link {
+        color: inherit;
+        text-decoration: none;
+      }
+      a.title-link:hover {
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 4px;
+      }
+      a.title-link::after {
+        content: "↗";
+        font-size: 0.55em;
+        vertical-align: super;
+        margin-left: 4px;
+        color: var(--color-primary);
+      }
+
+      /* 一列多顆「在 GitHub 查看」按鈕 */
+      .gh-btn-group {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin: 4px 0 18px;
+      }
+      /* 標題與「在 GitHub 查看」按鈕同列 */
+      .gh-head-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 24px 0 8px;
+      }
+      .codelab-step .gh-head-row h3,
+      .codelab-step .gh-head-row h4 {
+        margin: 0;
+      }
+      a.gh-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 9px 16px;
+        background: var(--color-primary);
+        color: #fff;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 14px;
+        text-decoration: none;
+        transition:
+          background 0.15s,
+          box-shadow 0.15s;
+      }
+      a.gh-btn:hover {
+        background: var(--color-primary-dark);
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.25);
+      }
+      a.gh-btn svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
+        flex-shrink: 0;
+      }
+      a.gh-btn code {
+        font-family: var(--font-mono);
+        background: rgba(255, 255, 255, 0.18);
+        padding: 1px 6px;
+        border-radius: 4px;
+        border-bottom: none;
+      }
       /* =====================
        CSS Reset & Variables
        ===================== */
@@ -66,6 +176,7 @@
         display: flex;
         flex-direction: column;
         min-height: 100vh;
+        overflow-x: hidden;
       }
 
       /* =====================
@@ -99,6 +210,7 @@
         color: var(--color-text-secondary);
         font-weight: 400;
         flex: 1;
+        min-width: 0; /* 關鍵防線：確保 Flexbox 彈性收縮，跨瀏覽器（Firefox, Safari 等）皆能正常 Ellipsis 截斷 */
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -277,6 +389,28 @@
         border-radius: 4px;
         padding: 1px 6px;
         color: #c0392b;
+        white-space: normal;
+        word-break: break-word;
+      }
+
+      /* 帶讀順序表：加寬檔名欄、避免長檔名 code 被擠成斷行碎片 */
+      .reading-order td {
+        vertical-align: top;
+      }
+      .reading-order th:nth-child(1),
+      .reading-order td:nth-child(1) {
+        width: 34%;
+      }
+      .reading-order th:nth-child(2),
+      .reading-order td:nth-child(2) {
+        width: 18%;
+      }
+      .reading-order td:nth-child(1) code {
+        white-space: nowrap;
+      }
+      .reading-order td:nth-child(1) a.gh-src {
+        display: inline-block;
+        line-height: 2.1;
       }
 
       /* Code blocks */
@@ -476,8 +610,8 @@
       }
 
       /* =====================
-       Step Navigation (Bottom)
-       ===================== */
+      Step Navigation (Bottom)
+      ===================== */
       .codelab-step-nav {
         display: flex;
         justify-content: space-between;
@@ -498,13 +632,24 @@
         transition:
           background 0.15s,
           color 0.15s;
-        color: var(--color-primary);
+        color: var(--color-text-secondary);
         border: 1px solid var(--color-border);
+        background: var(--color-surface);
       }
       .codelab-step-nav a:hover {
+        background: var(--color-bg);
+        color: var(--color-text);
+        border-color: var(--color-text-secondary);
+      }
+      .codelab-step-nav a.next {
         background: var(--color-primary);
         color: #fff;
         border-color: var(--color-primary);
+      }
+      .codelab-step-nav a.next:hover {
+        background: var(--color-primary-dark);
+        border-color: var(--color-primary-dark);
+        color: #fff;
       }
       .codelab-step-nav .prev::before {
         content: '← ';
@@ -913,82 +1058,447 @@
         display: block;
         pointer-events: none;
       }
+      /* Mobile device switching fixes: prevent stale drawer states and wide diagrams from breaking narrow viewports. */
+      .mermaid-svg {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .mermaid-svg svg {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+      }
+      .mermaid-container .mermaid-svg {
+        text-align: center;
+      }
+      @media (max-width: 768px) {
+        html,
+        body {
+          width: 100%;
+          max-width: 100%;
+        }
+        .codelab-body,
+        .codelab-main,
+        .codelab-step,
+        .callout,
+        .tech-accordion,
+        .learning-pillars-container,
+        .mermaid-container,
+        .codelab-img-wrapper,
+        .table-responsive-wrapper {
+          min-width: 0;
+          max-width: 100%;
+        }
+        .codelab-step pre {
+          max-width: 100%;
+        }
+        .mermaid-modal-controls {
+          flex-wrap: wrap;
+        }
+        .mermaid-modal-btn {
+          min-width: 0;
+        }
+      }
+      @media (min-width: 769px) {
+        .codelab-nav-backdrop {
+          display: none !important;
+        }
+        .codelab-nav {
+          transform: none !important;
+        }
+      }
 
       /* =====================
-       Responsive
+       Responsive & RWD Enhanced
        ===================== */
+      .codelab-menu-toggle {
+        display: none; /* 桌面端預設隱藏 */
+        background: transparent;
+        border: none;
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        padding: 8px;
+        margin-right: 4px;
+        border-radius: 50%;
+        align-items: center;
+        justify-content: center;
+        transition:
+          background 0.15s,
+          color 0.15s;
+        flex-shrink: 0;
+        touch-action: manipulation;
+      }
+      .codelab-menu-toggle:hover {
+        background: var(--color-bg);
+        color: var(--color-text);
+      }
+      .codelab-menu-toggle svg {
+        display: block;
+      }
+
+      /* 行動端抽屜背景遮罩 */
+      .codelab-nav-backdrop {
+        position: fixed;
+        top: var(--header-height);
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(32, 33, 36, 0.4);
+        backdrop-filter: blur(2px);
+        z-index: 150;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .codelab-nav-backdrop.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* 表格響應式包裝，防止撐破版面 */
+      .table-responsive-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 20px 0;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+      }
+      .table-responsive-wrapper .codelab-table {
+        margin: 0; /* 清除原有外距 */
+      }
+      .codelab-table {
+        min-width: 100%;
+      }
+
+      /* 自訂精緻捲軸：提升側邊欄、程式碼區塊與表格的行動端與桌面端質感 */
+      .codelab-nav::-webkit-scrollbar,
+      .codelab-step pre::-webkit-scrollbar,
+      .table-responsive-wrapper::-webkit-scrollbar {
+        height: 6px;
+        width: 6px;
+      }
+      .codelab-nav::-webkit-scrollbar-track,
+      .codelab-step pre::-webkit-scrollbar-track,
+      .table-responsive-wrapper::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .codelab-nav::-webkit-scrollbar-thumb,
+      .codelab-step pre::-webkit-scrollbar-thumb,
+      .table-responsive-wrapper::-webkit-scrollbar-thumb {
+        background: var(--color-border);
+        border-radius: 3px;
+      }
+      .codelab-nav::-webkit-scrollbar-thumb:hover,
+      .codelab-step pre::-webkit-scrollbar-thumb:hover,
+      .table-responsive-wrapper::-webkit-scrollbar-thumb:hover {
+        background: var(--color-step-inactive);
+      }
+
       @media (max-width: 768px) {
-        .codelab-nav {
-          display: none;
+        .codelab-menu-toggle {
+          display: inline-flex; /* 啟用漢堡按鈕 */
+          padding: 10px; /* 增加點擊區域，滿足 44x44px 觸控規範 */
         }
+
+        /* 將固定側邊欄重構為「側滑抽屜」 */
+        .codelab-nav {
+          position: fixed;
+          top: var(--header-height);
+          left: 0;
+          width: var(--sidebar-width);
+          height: calc(100vh - var(--header-height));
+          z-index: 160;
+          border-right: 1px solid var(--color-border);
+          box-shadow: 8px 0 24px rgba(0, 0, 0, 0.12);
+          transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          background: var(--color-surface);
+          transform: translateX(-100%);
+        }
+
+        /* 啟用抽屜滑出狀態 */
+        .codelab-nav.active {
+          transform: translateX(0);
+        }
+
+        /* 主內容邊距調優，避免過度寬鬆 */
         .codelab-main {
           padding: 24px 20px 60px;
         }
+
+        /* 標題字型縮放 */
         .codelab-step__title {
           font-size: 22px;
         }
+
+        /* 隱藏非核心 Meta 資訊，為標題留出呼吸空間 */
+        .codelab-header__meta {
+          display: none;
+        }
+
+        /* 步驟導航在行動端改為垂直堆疊卡片，給予長標題充足空間且好點擊 */
+        .codelab-step-nav {
+          flex-direction: column-reverse;
+          gap: 12px;
+          align-items: stretch;
+          margin-top: 36px;
+          padding-top: 20px;
+        }
+        .codelab-step-nav a {
+          width: 100%;
+          justify-content: center;
+          padding: 12px 16px;
+          font-size: 14px;
+        }
+
+        /* 放大模態視窗行動端最佳化 (解決標題重疊、按鈕擠壓與顯示邊界窄小問題) */
+        .mermaid-modal-header {
+          padding: 12px 16px;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 12px;
+        }
+        .mermaid-modal-title {
+          font-size: 14px;
+          width: 100%;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .mermaid-modal-controls {
+          width: 100%;
+          justify-content: space-between;
+          gap: 6px;
+        }
+        .mermaid-modal-btn {
+          padding: 6px 10px;
+          font-size: 12px;
+          flex: 1;
+          justify-content: center;
+        }
+        .mermaid-modal-zoom-indicator {
+          font-size: 12px;
+          min-width: 36px;
+          text-align: center;
+        }
+        .mermaid-modal-body {
+          padding: 16px;
+        }
+        .mermaid-modal-svg-container {
+          padding: 16px;
+          border-radius: 8px;
+        }
+
+        /* 縮小圖表與圖片外層容器的內距，擴大行動端可用顯示面積 */
+        .mermaid-container,
+        .codelab-img-wrapper {
+          padding: 44px 12px 12px;
+          margin: 16px 0;
+        }
+      }
+
+      /* 超窄行動裝置 (<= 480px) */
+      @media (max-width: 480px) {
+        .codelab-header {
+          padding: 0 12px;
+          gap: 8px;
+        }
+        .codelab-header__logo {
+          font-size: 15px;
+        }
+        .codelab-header__title {
+          font-size: 13px;
+        }
+
+        /* 手機端空間重分配，縮減容器內距以擴大可讀範圍 */
+        .codelab-main {
+          padding: 20px 16px 50px;
+        }
+        .callout {
+          padding: 12px 16px;
+          margin: 16px 0;
+        }
+        .tech-accordion-content {
+          padding: 16px;
+        }
+        .learning-pillar-card {
+          padding: 16px;
+        }
+
+        /* 步驟標題區塊在手機上改為垂直排列，更加大氣不擁擠 */
+        .codelab-step__header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+          margin-bottom: 20px;
+        }
+        .codelab-step__num {
+          width: 32px;
+          height: 32px;
+          font-size: 14px;
+        }
+        .codelab-step__title {
+          font-size: 18px;
+        }
+
+        /* 縮減代碼區塊內距 */
+        .codelab-step pre {
+          padding: 16px 16px 36px; /* 底部多預留空間給複製按鈕 */
+        }
+        .code-copy-btn {
+          top: auto;
+          bottom: 8px;
+          right: 12px;
+        }
+      }
+
+      /* =======================================================
+       Platform Tabs (macOS/Linux vs Windows PowerShell) Style
+       ======================================================= */
+      .platform-tabs {
+        margin: 24px 0;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        background: var(--color-surface);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+      }
+      .tab-headers {
+        display: flex;
+        background: #f1f3f4;
+        border-bottom: 1px solid var(--color-border);
+        padding: 0;
+      }
+      .tab-btn {
+        background: transparent;
+        border: none;
+        padding: 12px 20px;
+        font-family: var(--font-heading);
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--color-text-secondary);
+        cursor: pointer;
+        transition: all 0.15s ease;
+        border-bottom: 3px solid transparent;
+        outline: none;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .tab-btn:hover {
+        color: var(--color-text);
+        background: rgba(0, 0, 0, 0.04);
+      }
+      .tab-btn.active {
+        color: var(--color-primary);
+        border-bottom-color: var(--color-primary);
+        background: var(--color-surface);
+        font-weight: 700;
+      }
+      .tab-content {
+        padding: 20px;
+      }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
       }
     </style>
   </head>
   <body>
     <!-- Top Header -->
     <header class="codelab-header">
+      <button
+        class="codelab-menu-toggle"
+        id="menu-toggle"
+        aria-label="切換目錄"
+        aria-expanded="false"
+        aria-controls="codelab-nav"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="22"
+          height="22"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
       <a class="codelab-header__logo" href="#">Codelabs</a>
-      <span class="codelab-header__title"
+      <span
+        class="codelab-header__title"
+        title="【AI 技術架構實戰】從地端到雲端：保險推薦 Agent 全生命週期開發手冊"
         >【AI 技術架構實戰】從地端到雲端：保險推薦 Agent
         全生命週期開發手冊</span
       >
-      <span class="codelab-header__meta">AI 技術架構團隊 · 2026-05-28</span>
+      <span class="codelab-header__meta">AI 技術架構團隊 · 2026-05-28 · ⏱ 90 分鐘</span>
     </header>
+
+    <!-- 行動端抽屜背景遮罩 -->
+    <div class="codelab-nav-backdrop" id="nav-backdrop"></div>
 
     <div class="codelab-body">
       <!-- Left Sidebar TOC -->
       <nav class="codelab-nav" id="codelab-nav">
         <p class="codelab-nav__heading">目錄</p>
         <ul class="codelab-nav__list" id="step-list">
+          <li class="codelab-nav__item" data-step="0">
+            <a href="#step-0">
+              <span class="codelab-nav__step-num">0</span>
+              <span class="codelab-nav__step-title">環境預備（Workshop 前）</span>
+            </a>
+          </li>
           <li class="codelab-nav__item active" data-step="1">
             <a href="#step-1">
               <span class="codelab-nav__step-num">1</span>
-              <span class="codelab-nav__step-title">系統全景圖</span>
+              <span class="codelab-nav__step-title">系統全景圖 <small style="color:var(--color-text-secondary);font-weight:400">⏱ 10 分</small></span>
             </a>
           </li>
           <li class="codelab-nav__item" data-step="2">
             <a href="#step-2">
               <span class="codelab-nav__step-num">2</span>
-              <span class="codelab-nav__step-title">第一站：地端環境啟動</span>
+              <span class="codelab-nav__step-title">地端環境啟動 <small style="color:var(--color-text-secondary);font-weight:400">⏱ 15 分</small></span>
             </a>
           </li>
           <li class="codelab-nav__item" data-step="3">
             <a href="#step-3">
               <span class="codelab-nav__step-num">3</span>
               <span class="codelab-nav__step-title"
-                >深度解析：核心技術實作</span
+                >核心技術實作 <small style="color:var(--color-text-secondary);font-weight:400">⏱ 30 分</small></span
               >
             </a>
           </li>
           <li class="codelab-nav__item" data-step="4">
             <a href="#step-4">
               <span class="codelab-nav__step-num">4</span>
-              <span class="codelab-nav__step-title">安全性與隱私保護</span>
+              <span class="codelab-nav__step-title">安全性與隱私保護 <small style="color:var(--color-text-secondary);font-weight:400">⏱ 10 分</small></span>
             </a>
           </li>
           <li class="codelab-nav__item" data-step="5">
             <a href="#step-5">
               <span class="codelab-nav__step-num">5</span>
-              <span class="codelab-nav__step-title">品質保證：測試與評估</span>
+              <span class="codelab-nav__step-title">品質保證：測試與評估 <small style="color:var(--color-text-secondary);font-weight:400">⏱ 5 分</small></span>
             </a>
           </li>
           <li class="codelab-nav__item" data-step="6">
             <a href="#step-6">
               <span class="codelab-nav__step-num">6</span>
-              <span class="codelab-nav__step-title">營運與觀測</span>
+              <span class="codelab-nav__step-title">營運與觀測 <small style="color:var(--color-text-secondary);font-weight:400">⏱ 5 分</small></span>
             </a>
           </li>
           <li class="codelab-nav__item" data-step="7">
             <a href="#step-7">
               <span class="codelab-nav__step-num">7</span>
               <span class="codelab-nav__step-title"
-                >個人沙盒環境：Dev 部署</span
+                >個人沙盒：Dev 部署 <small style="color:var(--color-text-secondary);font-weight:400">⏱ 5 分</small></span
               >
             </a>
           </li>
@@ -996,15 +1506,21 @@
             <a href="#step-8">
               <span class="codelab-nav__step-num">8</span>
               <span class="codelab-nav__step-title"
-                >航向雲端：Staging 部署與 CI/CD 管線</span
+                >雲端部署與 CI/CD <small style="color:var(--color-text-secondary);font-weight:400">⏱ 5 分</small></span
               >
             </a>
           </li>
           <li class="codelab-nav__item" data-step="9">
             <a href="#step-9">
               <span class="codelab-nav__step-num">9</span>
+              <span class="codelab-nav__step-title">結語：技術總結 <small style="color:var(--color-text-secondary);font-weight:400">⏱ 5 分</small></span>
+            </a>
+          </li>
+          <li class="codelab-nav__item" data-step="10">
+            <a href="#step-10">
+              <span class="codelab-nav__step-num">10</span>
               <span class="codelab-nav__step-title"
-                >結語：技術總結</span
+                >延伸學習資源</span
               >
             </a>
           </li>
@@ -1013,6 +1529,375 @@
 
       <!-- Main Content -->
       <main class="codelab-main" id="codelab-main">
+
+        <!-- ══════════════════════════════════════════
+             STEP 0：環境預備（Workshop 前完成）
+             ══════════════════════════════════════════ -->
+        <section class="codelab-step" id="step-0">
+
+          <!-- ════════════ 90 分鐘議程總覽 ════════════ -->
+          <h3>🗓 Workshop 90 分鐘議程總覽</h3>
+          <table class="codelab-table">
+            <thead>
+              <tr>
+                <th>時段</th>
+                <th>章節</th>
+                <th>重點內容</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>11:00 – 11:10</strong></td>
+                <td>Step 1 · 系統全景圖</td>
+                <td>架構導覽、三支柱系統設計、請求生命週期</td>
+              </tr>
+              <tr>
+                <td><strong>11:10 – 11:25</strong></td>
+                <td>Step 2 · 地端環境啟動</td>
+                <td>環境變數設定、資料庫初始化、前後端啟動驗證</td>
+              </tr>
+              <tr style="background:#e8f0fe">
+                <td><strong>11:25 – 11:55</strong></td>
+                <td>Step 3 · 核心技術實作 ⭐</td>
+                <td>WebSocket 多模態串流、SSE 事件轉譯、ADK 生命週期（主軸）</td>
+              </tr>
+              <tr>
+                <td><strong>11:55 – 12:05</strong></td>
+                <td>Step 4 · 安全性與隱私保護</td>
+                <td>JWT 驗證、PII 遮蔽、審計日誌</td>
+              </tr>
+              <tr>
+                <td><strong>12:05 – 12:10</strong></td>
+                <td>Step 5 · 品質保證</td>
+                <td>測試策略、評估框架概覽</td>
+              </tr>
+              <tr>
+                <td><strong>12:10 – 12:15</strong></td>
+                <td>Step 6 · 營運與觀測</td>
+                <td>分散式追蹤、Cloud Monitoring</td>
+              </tr>
+              <tr>
+                <td><strong>12:15 – 12:25</strong></td>
+                <td>Step 7–8 · 雲端部署</td>
+                <td>Dev / Staging 部署流程、CI/CD 管線概覽</td>
+              </tr>
+              <tr>
+                <td><strong>12:25 – 12:30</strong></td>
+                <td>Step 9–10 · 結語與延伸學習</td>
+                <td>技術回顧、Q&amp;A、資源連結</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="codelab-step__header">
+            <span class="codelab-step__num">0</span>
+            <h2 class="codelab-step__title">課前準備與環境安裝 <span style="font-size:16px;font-weight:400;color:var(--color-text-secondary)">（請在 Workshop 開始前完成）</span></h2>
+          </div>
+
+          <div class="callout callout-important">
+            <strong>⚠️ Pre-work：請在課程開始前完成所有步驟</strong>
+            <p>
+              為了確保您在課程當天能 100% 專注於 Agent 核心架構的開發與實作，請在<strong>課程開始前</strong>依照本說明完成<strong>裝置整備</strong>、<strong>帳號授權</strong>以及<strong>開發環境安裝與驗證</strong>。<br/>
+              現場 Workshop 共 90 分鐘，不含環境安裝時間。
+            </p>
+          </div>
+
+          <!-- ════════════ 階段一：硬體裝置要求 ════════════ -->
+          <h3>📋 階段一：硬體裝置要求</h3>
+          <p>請根據您的作業系統，確認並整備您的本機開發環境：</p>
+
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <table class="codelab-table">
+                  <thead>
+                    <tr><th>項目</th><th>要求</th><th>說明</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>作業系統</strong></td>
+                      <td>macOS（推薦）/ Linux</td>
+                      <td>Intel 晶片或 Apple Silicon M1-M4 皆可；Linux AMD64/ARM64</td>
+                    </tr>
+                    <tr>
+                      <td><strong>記憶體 (RAM)</strong></td>
+                      <td>16 GB 以上（建議）</td>
+                      <td>流暢運作 Docker、Next.js 前端與 FastAPI 後端</td>
+                    </tr>
+                    <tr>
+                      <td><strong>硬碟空間</strong></td>
+                      <td>10 GB 以上可用空間</td>
+                      <td>Docker 映像檔、Python / Node.js 套件下載</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Xcode Command Line Tools / build-essential</strong></td>
+                      <td>必須安裝</td>
+                      <td>提供 <code>make</code>、<code>git</code> 等核心指令，<code>Makefile</code> 大量依賴此工具</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <h4>安裝 Xcode Command Line Tools</h4>
+                <pre data-lang="bash"><code class="language-bash">xcode-select --install</code></pre>
+                <p>驗證：執行 <code>make --version</code> 或 <code>git --version</code>，確認有版本號輸出。</p>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <table class="codelab-table">
+                  <thead>
+                    <tr><th>項目</th><th>要求</th><th>說明</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>作業系統</strong></td>
+                      <td>Windows 10 / 11</td>
+                      <td>推薦使用原生 PowerShell 5.1 以上或 PowerShell 7</td>
+                    </tr>
+                    <tr>
+                      <td><strong>記憶體 (RAM)</strong></td>
+                      <td>16 GB 以上（建議）</td>
+                      <td>流暢運作 Docker Desktop for Windows 兩端服務</td>
+                    </tr>
+                    <tr>
+                      <td><strong>硬碟空間</strong></td>
+                      <td>10 GB 以上可用空間</td>
+                      <td>Docker 容器與開發相依環境下載</td>
+                    </tr>
+                    <tr>
+                      <td><strong>PowerShell 執行原則</strong></td>
+                      <td>允許執行本地腳本</td>
+                      <td>本專案使用 <code>.\scripts\dev.ps1</code> 作為 Windows 統一入口，需允許 <code>.ps1</code> 執行</td>
+                    </tr>
+                </tbody>
+              </table>
+              <div class="callout callout-note">
+                <strong>推薦使用 Chocolatey 套件管理器</strong>
+                <p>本階段僅確認硬體規格。<a href="https://chocolatey.org/" target="_blank" rel="noopener">Chocolatey</a> 套件管理器的實際安裝與套件清單（Python、Node.js、uv、Docker Desktop、gcloud、Terraform 等）將於<strong>階段三</strong>統一說明。</p>
+              </div>
+            </div>
+            </div>
+          </div>
+
+          <!-- ════════════ 階段二：必備帳號與雲端權限 ════════════ -->
+          <h3>📋 階段二：必備帳號與雲端權限</h3>
+          <p>在進入軟體安裝前，請先備妥以下兩個雲端帳號：</p>
+
+          <h4>1. Google Cloud Platform (GCP) 帳號與專案 🌟</h4>
+          <p>本次 Workshop 將實際使用 <strong>Vertex AI Gemini API</strong> 以及 <strong>Terraform 雲端部署</strong>（Cloud Run、Cloud SQL、Secret Manager、WIF）。</p>
+          <ul>
+            <li><strong>GCP 帳號：</strong>請準備好您的個人或公司 GCP 帳號，並登入 <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">Google Cloud Console</a>。</li>
+            <li><strong>GCP 專案：</strong>建立或選擇一個乾淨的 GCP 專案，並記錄其 <strong>Project ID</strong>。</li>
+            <li><strong>啟用計費 (Billing)：</strong>您的 GCP 專案<strong>必須已啟用計費功能</strong>。未綁定信用卡的專案將無法使用 Vertex AI 及建立雲端基礎設施。</li>
+            <li><strong>帳號權限：</strong>確保您的帳號在該專案中擁有 <code>Owner</code> 或 <code>Editor</code> 權限，以便建立服務帳號與 CI/CD 觸發器。</li>
+          </ul>
+
+          <div class="callout callout-warning">
+            <strong>⚠️ 請務必提前確認計費已啟用</strong>
+            <p>未啟用 Billing 的 GCP 專案在 Workshop 現場將無法呼叫 Vertex AI API，導致後續實作無法進行。請在到場前於 Google Cloud Console 完成驗證。</p>
+          </div>
+
+          <h4>2. GitHub 帳號</h4>
+          <p>本專案整合了基於 GitHub 的雲端自動化部署 (CI/CD)。</p>
+          <ul>
+            <li>請準備一個常用的 <strong>GitHub 帳號</strong>。</li>
+            <li>課程開始時，您需要將本專案的 Repository <strong>Fork</strong> 至您的個人帳號下，以便綁定 GCP Cloud Build 自動化部署管線。</li>
+          </ul>
+
+          <!-- ════════════ 階段三：開發工具安裝 ════════════ -->
+          <h3>📋 階段三：開發工具與執行環境安裝</h3>
+          <p>請根據您的作業系統，選擇對應的套件管理器進行一鍵安裝：</p>
+
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <p>推薦使用 macOS 套件管理器 <strong>Homebrew</strong> 執行以下安裝：</p>
+                <pre data-lang="bash"><code class="language-bash"># 1. 安裝 Visual Studio Code、Docker Desktop 與 Google Cloud SDK
+brew install --cask visual-studio-code docker google-cloud-sdk
+
+# 2. 安裝 Python 3.12、Node.js (v20+)、uv 與 Terraform
+brew install python@3.12 node uv
+brew tap hashicorp/tap && brew install hashicorp/tap/terraform</code></pre>
+
+                <p>安裝 VS Code 擴充套件（一鍵安裝後端 Python、Ruff，前端 Next.js 與 Docker 插件）：</p>
+                <pre data-lang="bash"><code class="language-bash">code --install-extension ms-python.python
+code --install-extension charliermarsh.ruff
+code --install-extension dbaeumer.vscode-eslint
+code --install-extension esbenp.prettier-vscode
+code --install-extension bradlc.vscode-tailwindcss
+code --install-extension ms-azuretools.vscode-docker</code></pre>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <p>推薦使用 Windows 套件管理器 <strong>Chocolatey</strong> 或 <strong>Winget</strong>，於系統管理權限 PowerShell 執行：</p>
+                <pre data-lang="powershell"><code class="language-powershell"># 使用 Chocolatey 安裝全套必備工具 (特定版本的 Python 需獨立安裝，以免影響其他套件)
+choco install python --version=3.12.3 -y
+choco install git vscode docker-desktop nodejs uv gcloudsdk terraform -y</code></pre>
+
+                <p>或者使用 Windows 預設的 <strong>Winget</strong> 安裝：</p>
+                <pre data-lang="powershell"><code class="language-powershell">winget install --id Git.Git
+winget install --id Microsoft.VisualStudioCode
+winget install --id Docker.DockerDesktop
+winget install --id Python.Python.3.12
+winget install --id OpenJS.NodeJS
+winget install --id Google.CloudSDK
+winget install --id HashiCorp.Terraform
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"</code></pre>
+
+                <p>安裝 VS Code 擴充套件（在 PowerShell 中執行即可）：</p>
+                <pre data-lang="powershell"><code class="language-powershell">code --install-extension ms-python.python
+code --install-extension charliermarsh.ruff
+code --install-extension dbaeumer.vscode-eslint
+code --install-extension esbenp.prettier-vscode
+code --install-extension bradlc.vscode-tailwindcss
+code --install-extension ms-azuretools.vscode-docker</code></pre>
+              </div>
+            </div>
+          </div>
+          <div class="callout callout-warning">
+            <strong>Docker Desktop 啟動提醒</strong>
+            <p>安裝後請務必<strong>開啟 Docker Desktop 軟體</strong>，並確認狀態列顯示綠色「Running」後，再繼續後續步驟。</p>
+          </div>
+
+          <!-- ════════════ 階段四：本機環境初始化 ════════════ -->
+          <h3>📋 階段四：本機環境初始化與啟動</h3>
+          <p>完成上述軟體安裝後，請進入專案根目錄，根據您的平台進行環境變數拷貝、資料庫初始化以及依賴套件安裝：</p>
+
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <h4>1. 設定本機環境變數與 API 密鑰</h4>
+                <pre data-lang="bash"><code class="language-bash"># 拷貝環境變數範例
+cp .env.example .env
+</code></pre>
+                <p>請開啟 <code>.env</code> 確認您目前環境變數相關專案設定值。</p>
+
+                <h4>2. 啟動並初始化本機資料庫與依賴套件</h4>
+                <pre data-lang="bash"><code class="language-bash"># 一鍵建立資料庫容器、匯入 Seed 與 FAQ Embeddings
+make db-setup
+
+# 建立 Python 3.12 虛擬環境並安裝相依套件
+make install-all
+
+# 安裝 Next.js 前端專案依賴
+make ui-install</code></pre>
+
+                <h4>3. 本機 GCP 認證與預設專案設定</h4>
+                <pre data-lang="bash"><code class="language-bash"># 登入您的 Google 帳號
+gcloud auth login
+
+# 設定預設專案 ID
+gcloud config set project YOUR_PROJECT_ID
+
+# 啟用本機應用程式預設憑證 (Terraform 與 本地 Python 呼叫 Vertex AI 必備)
+gcloud auth application-default login</code></pre>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <h4>1. 設定本機環境變數</h4>
+                <pre data-lang="powershell"><code class="language-powershell"># 拷貝環境變數範例
+Copy-Item .env.example .env
+                </code></pre>
+                <p>請開啟 <code>.env</code> 填寫您的 API 密鑰與專案設定值。</p>
+
+                <h4>2. 啟動並初始化本機資料庫與依賴套件</h4>
+                <p>本專案以 <code>.\scripts\dev.ps1</code> 作為 Windows 統一入口，對應 macOS 端的 <code>make</code> 指令：</p>
+                <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 db-setup      # 一鍵建立資料庫容器、匯入 Seed 與 FAQ Embeddings
+.\scripts\dev.ps1 install-all  # 建立 Python 3.12 虛擬環境並安裝所有相依套件
+.\scripts\dev.ps1 ui-install   # 安裝 Next.js 前端專案依賴</code></pre>
+
+                <h4>3. 本機 GCP 認證與預設專案設定</h4>
+                <pre data-lang="powershell"><code class="language-powershell"># 登入您的 Google 帳號
+gcloud auth login
+
+# 設定預設專案 ID
+gcloud config set project YOUR_PROJECT_ID
+
+# 啟用本機應用程式預設憑證 (Terraform 與 本地 Python 呼叫 Vertex AI 必備)
+gcloud auth application-default login</code></pre>
+              </div>
+            </div>
+          </div>
+          <div class="callout callout-note">
+            <strong>關於 ADC 憑證 (Application Default Credentials)</strong>
+            <p><code>gcloud auth application-default login</code> 會在本機建立 Application Default Credentials（ADC）。Terraform 與本地 Python 腳本連線 GCP 資源時，皆仰賴此憑證，請務必完成此步驟。</p>
+          </div>
+
+          <!-- ════════════ 階段五：一鍵驗證 ════════════ -->
+          <h3>📋 階段五：一鍵驗證環境（Check &amp; Ready）</h3>
+          <p>完成所有安裝後，請在專案根目錄下進行全面健康檢查：</p>
+
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <pre data-lang="bash"><code class="language-bash">make check-setup</code></pre>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <p>PowerShell 原生驗證腳本（自動偵測 Docker、Python、uv、Node.js、gcloud、Terraform、.env、db 容器、.venv 與 frontend/node_modules）：</p>
+                <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 check-setup</code></pre>
+                <p>若已安裝 Git Bash / WSL，亦可執行與 macOS 同一支 bash 檢查腳本：</p>
+                <pre data-lang="bash"><code class="language-bash">bash scripts/check_setup.sh</code></pre>
+              </div>
+            </div>
+          </div>
+
+          <p>該指令會自動掃描並驗證以下所有項目：</p>
+          <table class="codelab-table">
+            <thead>
+              <tr><th>驗證項目</th><th>說明</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>✔ 系統工具</td>
+                <td>Xcode Command Line Tools、Homebrew/Chocolatey、Docker 狀態</td>
+              </tr>
+              <tr>
+                <td>✔ 編輯器與擴充套件</td>
+                <td>VS Code 必備 Extensions 是否完整安裝</td>
+              </tr>
+              <tr>
+                <td>✔ 執行環境</td>
+                <td>Python 3.12、Node.js、Terraform 版本確認</td>
+              </tr>
+              <tr>
+                <td>✔ 雲端認證狀態</td>
+                <td>gcloud 登入帳號、Application Default Credentials 憑證授權</td>
+              </tr>
+              <tr>
+                <td>✔ 專案初始化狀態</td>
+                <td><code>.env</code>、資料庫容器、<code>.venv</code> 依賴、<code>node_modules</code> 依賴</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout callout-tip">
+            <strong>🎉 驗證成功的標誌</strong>
+            <p>當最下方出現以下訊息，代表您的環境已 100% 準備就緒，可以開心參與本次 Workshop！</p>
+            <pre style="margin-top:10px;margin-bottom:0;padding:12px 16px"><code>🎉 驗證成功！本機所有開發工具、執行環境與專案依賴已 100% 準備就緒！</code></pre>
+          </div>
+
+          <div class="callout callout-warning">
+            <strong>遇到問題？</strong>
+            <p>若環境安裝過程中遇到任何錯誤，請提前聯繫講師 or 在 Workshop 群組中留言，避免佔用現場寶貴的實作時間。</p>
+          </div>
+
+          <div class="codelab-step-nav">
+            <span></span>
+            <a class="next" href="#step-1">[專案全景]：系統全景圖</a>
+          </div>
+        </section>
+
         <section class="codelab-step" id="step-1">
           <div class="codelab-step__header">
             <span class="codelab-step__num">1</span>
@@ -1020,6 +1905,11 @@
               系統全景圖 (System Architecture)
             </h2>
           </div>
+          <div class="callout callout-note">
+            <strong>⏱ 時段：11:00 – 11:10（10 分鐘）</strong>
+            <p>本章節為 Workshop 開場導覽，建立整體系統認知，為後續實作奠定「地圖」基礎。</p>
+          </div>
+
           <p>👋 大家好！我是你們的技術架構導師。</p>
           <p>
             今天，我們將一起深入探索這套<strong>保險推薦 Agent 系統</strong
@@ -1048,8 +1938,8 @@
             <li>
               <strong>後端服務 (FastAPI + Google ADK)</strong>：基於
               <code>google-adk</code> 框架封裝 Agent 實例（定義於
-              <code>app/agent.py</code> 搭配系統提示詞
-              <code>prompts/insurance_agent_prompt.txt</code>），全站採用非同步
+              <a class="gh-src" href="blob/main/app/agent.py" target="_blank" rel="noopener"><code>app/agent.py</code></a> 搭配系統提示詞
+              <a class="gh-src" href="blob/main/app/prompts/insurance_agent_prompt.txt" target="_blank" rel="noopener"><code>prompts/insurance_agent_prompt.txt</code></a>），全站採用非同步
               <code>asyncio</code> 驅動。
             </li>
             <li>
@@ -1059,7 +1949,22 @@
             </li>
           </ol>
 
-          <h3>B. 前後端模組與 UI 元件設計</h3>
+          <div class="gh-head-row">
+            <h3>B. 前後端模組與 UI 元件設計</h3>
+            <a
+              class="gh-btn"
+              href="blob/main/docs/features/frontend.md"
+              target="_blank"
+              rel="noopener"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+              在 GitHub 查看 <code>frontend.md</code>
+            </a>
+          </div>
           <ul>
             <li>
               <strong>多模態即時 Hooks</strong>：
@@ -1108,17 +2013,73 @@
           <div class="codelab-step__header">
             <span class="codelab-step__num">2</span>
             <h2 class="codelab-step__title">
-              第一站：地端環境啟動 (Local Development)
+              <a
+                class="title-link"
+                href="blob/main/docs/features/development-execution.md"
+                target="_blank"
+                rel="noopener"
+                >第一站：地端環境啟動 (Local Development)</a
+              >
             </h2>
           </div>
+          <div class="callout callout-note">
+            <strong>⏱ 時段：11:10 – 11:25（15 分鐘）</strong>
+            <p>
+              本章節為 Workshop 第一個動手操作段落。<strong>前提：請確認 <a href="#step-0">Step 0 環境預備</a>的所有安裝與驗證項目均已完成</strong>，
+              本節將直接從 GCP 設定與服務啟動開始。
+            </p>
+          </div>
+
           <p>
             請開啟你的終端機，按照以下指令順序，我們來「點亮」這台地端機器。
           </p>
 
+          <h3>前期準備：GCP 專案授權</h3>
+          <div class="callout callout-warning">
+            <strong>注意</strong>
+            <p>
+              若你在 <a href="#step-0">Step 0</a> 已完成 <code>gcloud auth application-default login</code>，
+              可直接跳到「<strong>A. 環境變數配置</strong>」。以下指令適用於尚未綁定 GCP 專案的情況。
+            </p>
+          </div>
+          <ol>
+            <li>
+              <strong>建立環境變數檔案 (<code>.env</code>)</strong>：
+              <p>
+                在專案根目錄建立並設定 GCP 部署相關變數。本專案的
+                <code>Makefile</code>
+                會在執行時自動載入此檔案，免除手動輸入參數的麻煩（請確保
+                <code>.env</code> 檔案已被加入
+                <code>.gitignore</code> 中以防外洩）：
+              </p>
+              <pre><code class="language-bash">GCP_PROJECT_ID=&lt;YOUR_GCP_PROJECT_ID&gt;
+GCP_REGION=us-central1
+PROJECT_NAME=insurance-agent
+ENV_NAME=dev</code></pre>
+            </li>
+            <li>
+              <strong>登入並設定預設 GCP 專案</strong>：
+              <p>開啟終端機，執行以下認證與專案綁定指令：</p>
+              <pre><code class="language-bash">gcloud auth login
+gcloud config set project &lt;YOUR_GCP_PROJECT_ID&gt;
+# 建立本機 Application Default Credentials (ADC) 憑證
+# 【極重要】：Terraform 與本地 Python 腳本連線 GCP 資源時，強烈需要此 ADC 憑證來建立連線與 GCS Bucket！
+gcloud auth application-default login</code></pre>
+            </li>
+            <li>
+              <strong>啟用 GCP 核心基礎服務 APIs</strong>：
+              <p>若你的專案是全新建立的，請手動啟用以下必要 API 服務：</p>
+              <pre><code class="language-bash">
+gcloud services enable cloudresourcemanager.googleapis.com serviceusage.googleapis.com
+gcloud services enable aiplatform.googleapis.com
+              </code></pre>
+            </li>
+          </ol>
+
           <h3>A. 環境變數配置 (.env)</h3>
           <p>
             在安裝依賴與啟動服務之前，必須先建立並設定本地環境變數。請將專案根目錄下的
-            <code>.env.example</code> 複製一份並命名為 <code>.env</code>：
+            <a class="gh-src" href="blob/main/.env.example" target="_blank" rel="noopener"><code>.env.example</code></a> 複製一份並命名為 <code>.env</code>：
           </p>
           <pre><code class="language-bash">cp .env.example .env</code></pre>
           <p>
@@ -1150,8 +2111,22 @@
 
           <h3>B. 本地環境與依賴安裝</h3>
           <p>首先安裝所有 Python 核心依賴，並預備前端 UI 模組：</p>
-          <pre><code class="language-bash">make install-all # 安裝 Python 依賴與虛擬環境
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <pre><code class="language-bash">make install-all # 安裝 Python 依賴與虛擬環境
 make ui-install  # 安裝 Next.js 前端 UI 依賴</code></pre>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 install-all # 建立 Python 3.12 虛擬環境並安裝所有相依套件
+.\scripts\dev.ps1 ui-install  # 安裝 Next.js 前端專案依賴</code></pre>
+              </div>
+            </div>
+          </div>
 
           <h3>C. 容器化資料庫與 FAQ 知識庫初始化</h3>
           <p>
@@ -1159,14 +2134,29 @@ make ui-install  # 安裝 Next.js 前端 UI 依賴</code></pre>
             <code>pgvector</code> 支援），建立測試使用者，並執行 RAG
             向量嵌入（Embedding）與 FAQ 知識庫的資料寫入：
           </p>
-          <pre><code class="language-bash">make db-up     # 啟動 PostgreSQL 容器
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <pre><code class="language-bash">make db-up     # 啟動 PostgreSQL 容器
 make db-seed   # 建立測試帳號 testuser / password123
 make db-ingest # 執行 FAQ 知識庫向量化匯入 (gemini-embedding-001)</code></pre>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 db-up      # 啟動 PostgreSQL 與 Toolbox 容器
+.\scripts\dev.ps1 db-seed    # 建立測試帳號 testuser / password123
+.\scripts\dev.ps1 db-ingest  # 執行 FAQ 知識庫向量化匯入 (gemini-embedding-001)</code></pre>
+              </div>
+            </div>
+          </div>
           <div class="callout callout-note">
             <strong>DATABASE TIP:</strong>
             <p>
               如果你想快速清除並重新執行完整的
-              Init/Seed/Ingest，可以一鍵執行：<code>make db-reset</code>。
+              Init/Seed/Ingest，可以一鍵執行：<a class="gh-src" href="blob/main/Makefile#L165" target="_blank" rel="noopener"><code>make db-reset</code></a>。
             </p>
           </div>
 
@@ -1210,42 +2200,88 @@ make db-ingest # 執行 FAQ 知識庫向量化匯入 (gemini-embedding-001)</cod
           <div class="callout callout-note">
             <strong>RAG RUNTIME FLOW (RAG 執行期檢索流程):</strong>
             <p>
-              當本地資料庫與 FAQ 知識庫向量化順利完成後，系統便具備了語意檢索能力。下圖展示了當使用者提出保險觀念疑問（例如：「保單等待期是什麼？」）時，後端如何利用 <strong>Model Context Protocol (MCP)</strong> 架構，安全協調 <strong>MCP Toolbox</strong>、<strong>Vertex AI Embedding API</strong> 與 <strong>PostgreSQL pgvector</strong> 進行即時 RAG 語意搜尋：
+              當本地資料庫與 FAQ
+              知識庫向量化順利完成後，系統便具備了語意檢索能力。下圖展示了當使用者提出保險觀念疑問（例如：「保單等待期是什麼？」）時，後端如何利用
+              <strong>Model Context Protocol (MCP)</strong> 架構，安全協調
+              <strong>MCP Toolbox</strong>、<strong
+                >Vertex AI Embedding API</strong
+              >
+              與 <strong>PostgreSQL pgvector</strong> 進行即時 RAG 語意搜尋：
             </p>
           </div>
 
           <div class="codelab-img-wrapper">
-            <img src="images/pgvector.png" alt="MCP Toolbox + PostgreSQL pgvector 搜尋流程 Sequence Diagram" />
-            <div class="codelab-img-caption">圖 2.1: MCP Toolbox + PostgreSQL pgvector 搜尋流程時序圖</div>
+            <img
+              src="images/pgvector.png"
+              alt="MCP Toolbox + PostgreSQL pgvector 搜尋流程 Sequence Diagram"
+            />
+            <div class="codelab-img-caption">
+             MCP Toolbox + PostgreSQL pgvector 搜尋流程時序圖
+            </div>
           </div>
 
           <h3>D. 本地偵錯、開發與 Playground</h3>
           <p>
             本地除錯提供了高彈性的開發循環工具，我們可以使用不同的指令來啟動偵錯：
           </p>
-          <ol>
-            <li>
-              <strong>執行後端與前端</strong>：
-              <pre><code class="language-bash">make run-fastapi  # 啟動 FastAPI 服務 (Port 8080)
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <ol>
+                  <li>
+                    <strong>執行後端與前端</strong>：
+                    <pre><code class="language-bash">make run-fastapi  # 啟動 FastAPI 服務 (Port 8080)
 make ui-dev       # 啟動 Next.js 網頁 (Port 3000)</code></pre>
-            </li>
-            <li>
-              <strong>VS Code 斷點除錯</strong>：
-              <p>
-                使用 <code>make debug-fastapi</code> 啟動帶有
-                <code>debugpy</code> 偵錯器支援的後端，讓你可以隨時在 VS Code
-                中下中斷點，追蹤 AI 推理的即時變數狀態。
-              </p>
-            </li>
-            <li>
-              <strong>ADK Streamlit Playground</strong>：
-              <p>
-                執行 <code>make playground</code> 啟動 ADK 內建的 Web
-                互動沙盒，用最直覺的 GUI 即時驗證 Agent 的工具呼叫、Prompt
-                約束以及模型生成結果。
-              </p>
-            </li>
-          </ol>
+                  </li>
+                  <li>
+                    <strong>VS Code 斷點除錯</strong>：
+                    <p>
+                      使用 <a class="gh-src" href="blob/main/.vscode/launch.json" target="_blank" rel="noopener"><code>make debug-fastapi</code></a> 啟動帶有
+                      <code>debugpy</code> 偵錯器支援的後端，讓你可以隨時在 VS Code
+                      中下中斷點，追蹤 AI 推理的即時變數狀態。
+                    </p>
+                  </li>
+                  <li>
+                    <strong>ADK Streamlit Playground</strong>：
+                    <p>
+                      執行 <a class="gh-src" href="blob/main/Makefile#L603" target="_blank" rel="noopener"><code>make playground</code></a> 啟動 ADK 內建的 Web
+                      互動沙盒，用最直覺的 GUI 即時驗證 Agent 的工具呼叫、Prompt
+                      約束以及模型生成結果。
+                    </p>
+                  </li>
+                </ol>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <ol>
+                  <li>
+                    <strong>執行後端與前端</strong>：
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 run-fastapi  # 啟動 FastAPI 服務 (Port 8080)
+.\scripts\dev.ps1 ui-dev       # 啟動 Next.js 網頁 (Port 3000)</code></pre>
+                  </li>
+                  <li>
+                    <strong>VS Code 斷點除錯</strong>：
+                    <p>
+                      使用 <a class="gh-src" href="blob/main/scripts/dev.ps1" target="_blank" rel="noopener"><code>.\scripts\dev.ps1 debug-fastapi</code></a> 啟動帶有
+                      <code>debugpy</code> 偵錯器支援的後端，讓你可以隨時在 VS Code
+                      中下中斷點，追蹤 AI 推理的即時變數狀態。
+                    </p>
+                  </li>
+                  <li>
+                    <strong>ADK Streamlit Playground</strong>：
+                    <p>
+                      執行 <a class="gh-src" href="blob/main/scripts/dev.ps1" target="_blank" rel="noopener"><code>.\scripts\dev.ps1 playground</code></a> 啟動 ADK 內建的 Web
+                      互動沙盒，用最直覺的 GUI 即時驗證 Agent 的工具呼叫、Prompt
+                      約束以及模型生成結果。
+                    </p>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
 
           <h3>E. 容器化一鍵啟動與完整堆疊託管 (Docker Compose Workflow)</h3>
           <p>
@@ -1258,36 +2294,89 @@ make ui-dev       # 啟動 Next.js 網頁 (Port 3000)</code></pre>
 
           <h4>1. 核心容器化命令</h4>
           <p>專案 Makefile 中已封裝以下常用的容器生命週期管理指令：</p>
-          <ul>
-            <li>
-              <strong>啟動全站服務 (make up)</strong>：
-              <pre><code class="language-bash">make up # 在背景啟動資料庫、Toolbox、後端 API 與前端 UI</code></pre>
-              此命令對應執行
-              <code>docker compose up -d</code
-              >，會自動下載所需基礎映像檔，並在背景運行所有容器。
-            </li>
-            <li>
-              <strong>強制重建並啟動 (make up-build)</strong>：
-              <pre><code class="language-bash">make up-build # 重建 Backend 與 Frontend 映像檔並重新啟動</code></pre>
-              當你修改了
-              Dockerfile、套件依賴或靜態設定，需要重新打包映像檔時使用。
-            </li>
-            <li>
-              <strong>僅啟動基礎相依服務 (make db-up)</strong>：
-              <pre><code class="language-bash">make db-up # 僅在背景啟動 Postgres 與 Toolbox 容器</code></pre>
-              <strong>最推薦的開發模式：</strong>在主機上進行後端 (FastAPI)
-              與前端 (Next.js) 的開發與熱重載 (Hot-Reloading)，但讓資料庫與外部
-              MCP 工具包在 Docker 容器內運行。
-            </li>
-            <li>
-              <strong>完整關閉與清理 (make down)</strong>：
-              <pre><code class="language-bash">make down # 停止並移除所有本地容器與對應網路資源</code></pre>
-            </li>
-          </ul>
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <ul>
+                  <li>
+                    <strong>啟動全站服務 (make up)</strong>：
+                    <pre><code class="language-bash">make up # 在背景啟動資料庫、Toolbox、後端 API 與前端 UI</code></pre>
+                    此命令對應執行
+                    <code>docker compose up -d</code
+                    >，會自動下載所需基礎映像檔，並在背景運行所有容器。
+                  </li>
+                  <li>
+                    <strong>強制重建並啟動 (make up-build)</strong>：
+                    <pre><code class="language-bash">make up-build # 重建 Backend 與 Frontend 映像檔並重新啟動</code></pre>
+                    當你修改了
+                    Dockerfile、套件依賴或靜態設定，需要重新打包映像檔時使用。
+                  </li>
+                  <li>
+                    <strong>僅啟動基礎相依服務 (make db-up)</strong>：
+                    <pre><code class="language-bash">make db-up # 僅在背景啟動 Postgres 與 Toolbox 容器</code></pre>
+                    <strong>最推薦的開發模式：</strong>在主機上進行後端 (FastAPI)
+                    與前端 (Next.js) 的開發與熱重載 (Hot-Reloading)，但讓資料庫與外部
+                    MCP 工具包在 Docker 容器內運行。
+                  </li>
+                  <li>
+                    <strong>完整關閉與清理 (make down)</strong>：
+                    <pre><code class="language-bash">make down # 停止並移除所有本地容器與對應網路資源</code></pre>
+                  </li>
+                </ul>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <ul>
+                  <li>
+                    <strong>啟動全站服務 (.\scripts\dev.ps1 up)</strong>：
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 up # 在背景啟動資料庫、Toolbox、後端 API 與前端 UI</code></pre>
+                    此命令對應執行
+                    <code>docker compose up -d</code
+                    >，會自動下載所需基礎映像檔，並在背景運行所有容器。
+                  </li>
+                  <li>
+                    <strong>強制重建並啟動 (.\scripts\dev.ps1 up-build)</strong>：
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 up-build # 重建 Backend 與 Frontend 映像檔並重新啟動</code></pre>
+                    當你修改了
+                    Dockerfile、套件依賴或靜態設定，需要重新打包映像檔時使用。
+                  </li>
+                  <li>
+                    <strong>僅啟動基礎相依服務 (.\scripts\dev.ps1 db-up)</strong>：
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 db-up # 僅在背景啟動 Postgres 與 Toolbox 容器</code></pre>
+                    <strong>最推薦的開發模式：</strong>在主機上進行後端 (FastAPI)
+                    與前端 (Next.js) 的開發與熱重載 (Hot-Reloading)，但讓資料庫與外部
+                    MCP 工具包在 Docker 容器內運行。
+                  </li>
+                  <li>
+                    <strong>完整關閉與清理 (.\scripts\dev.ps1 down)</strong>：
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 down # 停止並移除所有本地容器與對應網路資源</code></pre>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
 
-          <h4>2. Docker Compose 服務清單與埠號對照</h4>
+          <div class="gh-head-row">
+            <h4>2. Docker Compose 服務清單與埠號對照</h4>
+            <a
+              class="gh-btn"
+              href="blob/main/docker-compose.yml"
+              target="_blank"
+              rel="noopener"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+              在 GitHub 查看 <code>docker-compose.yml</code>
+            </a>
+          </div>
           <p>
-            在執行 <code>make up</code> 後，系統會拉起以下 4
+            在執行 <a class="gh-src" href="blob/main/docker-compose.yml" target="_blank" rel="noopener"><code>make up</code></a> 後，系統會拉起以下 4
             個主要容器，彼此在自定義的橋接網路中通信：
           </p>
           <table class="codelab-table">
@@ -1370,18 +2459,29 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
           <div class="codelab-step__header">
             <span class="codelab-step__num">3</span>
             <h2 class="codelab-step__title">
-              技術導師導讀：WebSocket 多模態串流核心實作
+              <a
+                class="title-link"
+                href="blob/main/docs/features/live-streaming-architecture.md"
+                target="_blank"
+                rel="noopener"
+                >技術導師導讀：WebSocket 多模態串流核心實作</a
+              >
             </h2>
           </div>
+          <div class="callout callout-important">
+            <strong>⭐ 核心主軸 ⏱ 時段：11:25 – 11:55（30 分鐘）</strong>
+            <p>重點觀察與理解本章節的核心技術段落：
+              <strong>階段 3：WebSocket 多模態 Gemini Live 雙向串流生命週期。</strong>
+            </p>
+          </div>
+
           <p>
-            本章節會用技術講師帶領實作的角度，拆解保險推薦 Agent
+            本章節會用技術實作的角度，拆解保險推薦 Agent
             從「一般文字串流」進階到「多模態即時互動」的關鍵設計。閱讀時請把重心放在
             <b>階段 3：WebSocket 多模態 Gemini Live 雙向串流生命週期</b>：它是本
             workshop 最能體現即時 AI Agent 工程能力的核心段落。
           </p>
           <p>
-            講師帶讀時，建議先用階段 1 與階段 2
-            建立必要背景，再把主要時間投入階段 3：觀察 WebSocket
             如何完成安全握手、RunConfig
             初始化、上下游任務併發、媒體封包轉換、模型事件回傳，以及斷線後的資源回收。
           </p>
@@ -1414,36 +2514,35 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
           </div>
 
           <!-- 關鍵代碼地圖 -->
-          <h3>🎯 講師帶讀代碼地圖 (Instructor Code Map)</h3>
+          <h3>🎯 代碼地圖 (Instructor Code Map)</h3>
           <p>
             帶學員閱讀此章時，建議依照下列順序打開檔案。前兩列是本章主軸，後兩列是支撐背景；這樣可以避免學員先陷入框架細節，而忽略
             Live WebSocket 的資料流。
           </p>
-          <table class="codelab-table">
+          <table class="codelab-table reading-order">
             <thead>
               <tr>
                 <th>帶讀順序與核心檔案</th>
                 <th>技術定位</th>
-                <th>講師引導重點</th>
+                <th>引導重點</th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td>
-                  1. <code>app/services/live_agent_service.py</code><br />➔
+                  1. <a class="gh-src" href="blob/main/app/services/live_agent_service.py" target="_blank" rel="noopener"><code>app/services/live_agent_service.py</code></a><br />➔
                   <code>execute_live_session</code>
                 </td>
                 <td>WebSocket 雙向串流協調服務</td>
                 <td>
                   示範一條 Live 連線如何建立
-                  <code>RunConfig</code
-                  >、啟動上下游任務、監控第一個異常，並在斷線時取消 pending task
+                  <a class="gh-src" href="blob/main/app/services/live_agent_service.py" target="_blank" rel="noopener"><code>RunConfig</code></a>、啟動上下游任務、監控第一個異常，並在斷線時取消 pending task
                   與關閉 <code>LiveRequestQueue</code>。
                 </td>
               </tr>
               <tr>
                 <td>
-                  2. <code>app/streaming/upstream.py</code><br />➔
+                  2. <a class="gh-src" href="blob/main/app/streaming/upstream.py" target="_blank" rel="noopener"><code>app/streaming/upstream.py</code></a><br />➔
                   <code>upstream_task</code> /
                   <code>_resize_image_if_needed</code>
                 </td>
@@ -1456,7 +2555,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
               </tr>
               <tr>
                 <td>
-                  3. <code>app/services/agent_run_service.py</code><br />➔
+                  3. <a class="gh-src" href="blob/main/app/services/agent_run_service.py" target="_blank" rel="noopener"><code>app/services/agent_run_service.py</code></a><br />➔
                   <code>stream</code> &amp;
                   <code>map_adk_event_to_envelopes</code>
                 </td>
@@ -1469,7 +2568,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
               </tr>
               <tr>
                 <td>
-                  4. <code>app/container.py</code><br />➔
+                  4. <a class="gh-src" href="blob/main/app/container.py" target="_blank" rel="noopener"><code>app/container.py</code></a><br />➔
                   <code>build_app_container</code>
                 </td>
                 <td>依賴注入與容器工廠</td>
@@ -1491,7 +2590,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             </summary>
             <div class="tech-accordion-content">
               <p>
-                當 FastAPI 應用程式（由 <code>app/api/main.py</code> 的
+                當 FastAPI 應用程式（由 <a class="gh-src" href="blob/main/app/api/main.py" target="_blank" rel="noopener"><code>app/api/main.py</code></a> 的
                 <code>lifespan</code>
                 監聽啟動）點亮時，後端會執行全域的一致性初始化：
               </p>
@@ -1506,7 +2605,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                 <li>
                   <strong>組裝依賴圖 (Dependency Graph)</strong>：呼叫
                   <code>build_app_container()</code>（於
-                  <code>app/container.py</code>）將元件組裝：
+                  <a class="gh-src" href="blob/main/app/container.py" target="_blank" rel="noopener"><code>app/container.py</code></a>）將元件組裝：
                   <ul>
                     <li>
                       <strong>DatabaseSessionService</strong>：連接
@@ -1514,7 +2613,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                     </li>
                     <li>
                       <strong>Agent 實例化</strong>：從
-                      <code>app/prompts/insurance_agent_prompt.txt</code>
+                      <a class="gh-src" href="blob/main/app/prompts/insurance_agent_prompt.txt" target="_blank" rel="noopener"><code>app/prompts/insurance_agent_prompt.txt</code></a>
                       載入系統提示詞。繫結本地狀態維護工具（如
                       <code>save_user_profile</code
                       >、<code>save_last_recommendation</code>）與遠端 MCP
@@ -1601,7 +2700,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   <strong>過濾重複用戶回顯 (Echo Filter)</strong>：
                   <ul>
                     <li>
-                      <b>講師帶讀提醒</b>：ADK
+                      <b>重要提醒</b>：ADK
                       的執行流在第一個回合（Turn）通常會將用戶的原始輸入（Prompt）作為
                       Event 重新拋出。這裡可以帶學員觀察
                       <code>AgentRunService</code> 如何用
@@ -1682,7 +2781,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       ry="3"
                       class="actor actor-bottom"
                     />
-                    <text
+                    <a class="gh-src" href="blob/main/app/services/audit_log_service.py" target="_blank" rel="noopener"><text
                       x="1964.5"
                       y="1567.5"
                       dominant-baseline="central"
@@ -1697,7 +2796,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       <tspan x="1964.5" dy="0">
                         services/audit_log_service.py
                       </tspan>
-                    </text>
+                    </text></a>
                   </g>
                   <g>
                     <rect
@@ -1712,7 +2811,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       ry="3"
                       class="actor actor-bottom"
                     />
-                    <text
+                    <a class="gh-src" href="blob/main/app/services/session_service.py" target="_blank" rel="noopener"><text
                       x="1711.5"
                       y="1567.5"
                       dominant-baseline="central"
@@ -1727,7 +2826,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       <tspan x="1711.5" dy="0">
                         services/session_service.py
                       </tspan>
-                    </text>
+                    </text></a>
                   </g>
                   <g>
                     <rect
@@ -1742,7 +2841,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       ry="3"
                       class="actor actor-bottom"
                     />
-                    <text
+                    <a class="gh-src" href="blob/main/app/agent.py" target="_blank" rel="noopener"><text
                       x="1469"
                       y="1567.5"
                       dominant-baseline="central"
@@ -1755,7 +2854,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       "
                     >
                       <tspan x="1469" dy="0">app/agent.py (Gemini 2.5)</tspan>
-                    </text>
+                    </text></a>
                   </g>
                   <g>
                     <rect
@@ -1798,7 +2897,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       ry="3"
                       class="actor actor-bottom"
                     />
-                    <text
+                    <a class="gh-src" href="blob/main/app/services/agent_run_service.py" target="_blank" rel="noopener"><text
                       x="821"
                       y="1567.5"
                       dominant-baseline="central"
@@ -1813,7 +2912,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       <tspan x="821" dy="0">
                         services/agent_run_service.py
                       </tspan>
-                    </text>
+                    </text></a>
                   </g>
                   <g>
                     <rect
@@ -1828,7 +2927,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       ry="3"
                       class="actor actor-bottom"
                     />
-                    <text
+                    <a class="gh-src" href="blob/main/app/api/routes/run.py" target="_blank" rel="noopener"><text
                       x="491"
                       y="1567.5"
                       dominant-baseline="central"
@@ -1841,7 +2940,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       "
                     >
                       <tspan x="491" dy="0">api/routes/run.py</tspan>
-                    </text>
+                    </text></a>
                   </g>
                   <g />
                   <g>
@@ -1876,7 +2975,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         ry="3"
                         class="actor actor-top"
                       />
-                      <text
+                      <a class="gh-src" href="blob/main/app/services/audit_log_service.py" target="_blank" rel="noopener"><text
                         x="1964.5"
                         y="32.5"
                         dominant-baseline="central"
@@ -1891,7 +2990,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         <tspan x="1964.5" dy="0">
                           services/audit_log_service.py
                         </tspan>
-                      </text>
+                      </text></a>
                     </g>
                   </g>
                   <g>
@@ -1926,7 +3025,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         ry="3"
                         class="actor actor-top"
                       />
-                      <text
+                      <a class="gh-src" href="blob/main/app/services/session_service.py" target="_blank" rel="noopener"><text
                         x="1711.5"
                         y="32.5"
                         dominant-baseline="central"
@@ -1941,7 +3040,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         <tspan x="1711.5" dy="0">
                           services/session_service.py
                         </tspan>
-                      </text>
+                      </text></a>
                     </g>
                   </g>
                   <g>
@@ -1976,7 +3075,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         ry="3"
                         class="actor actor-top"
                       />
-                      <text
+                      <a class="gh-src" href="blob/main/app/agent.py" target="_blank" rel="noopener"><text
                         x="1469"
                         y="32.5"
                         dominant-baseline="central"
@@ -1989,7 +3088,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         "
                       >
                         <tspan x="1469" dy="0">app/agent.py (Gemini 2.5)</tspan>
-                      </text>
+                      </text></a>
                     </g>
                   </g>
                   <g>
@@ -2072,7 +3171,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         ry="3"
                         class="actor actor-top"
                       />
-                      <text
+                      <a class="gh-src" href="blob/main/app/services/agent_run_service.py" target="_blank" rel="noopener"><text
                         x="821"
                         y="32.5"
                         dominant-baseline="central"
@@ -2087,7 +3186,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         <tspan x="821" dy="0">
                           services/agent_run_service.py
                         </tspan>
-                      </text>
+                      </text></a>
                     </g>
                   </g>
                   <g>
@@ -2122,7 +3221,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         ry="3"
                         class="actor actor-top"
                       />
-                      <text
+                      <a class="gh-src" href="blob/main/app/api/routes/run.py" target="_blank" rel="noopener"><text
                         x="491"
                         y="32.5"
                         dominant-baseline="central"
@@ -2135,7 +3234,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         "
                       >
                         <tspan x="491" dy="0">api/routes/run.py</tspan>
-                      </text>
+                      </text></a>
                     </g>
                   </g>
                   <g>
@@ -3636,9 +4735,36 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
               stream)
             </summary>
             <div class="tech-accordion-content">
+              <div class="gh-btn-group">
+                <a
+                  class="gh-btn"
+                  href="blob/main/app/streaming/upstream.py"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path
+                      d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                    />
+                  </svg>
+                  在 GitHub 查看 <code>upstream.py</code>
+                </a>
+                <a
+                  class="gh-btn"
+                  href="blob/main/app/streaming/downstream.py"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  <svg viewBox="0 0 16 16" aria-hidden="true">
+                    <path
+                      d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                    />
+                  </svg>
+                  在 GitHub 查看 <code>downstream.py</code>
+                </a>
+              </div>
               <p>
-                這是本章的主要實作段落。講師可以把它當成一條完整的「即時 AI
-                通話管線」來帶：前端先建立 WebSocket 長連線，後端完成 JWT
+                完整的「即時 AI通話管線」：前端先建立 WebSocket 長連線，後端完成 JWT
                 安全握手，接著 <code>LiveAgentService</code> 建立 Live API
                 執行配置，最後用兩個非同步任務分別處理上游媒體輸入與下游模型回應。
               </p>
@@ -3654,7 +4780,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   >：
                   <ul>
                     <li>
-                      <strong>講師示範入口</strong>：從前端發起
+                      從前端發起
                       <code>/api/agent/live/ws/{session_id}</code>
                       長連線開始，說明為什麼瀏覽器 WebSocket 常需要把 token 放在
                       Query string，再由後端手動取出驗證。
@@ -3680,13 +4806,13 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   <strong>初始化會話與資源配置 (Resource Allocation)</strong>：
                   <ul>
                     <li>
-                      <strong>RunConfig 是 Live 行為的開關面板</strong>：啟用
+                      <strong><a class="gh-src" href="blob/main/app/services/live_agent_service.py" target="_blank" rel="noopener">RunConfig</a> 是 Live 行為的開關面板</strong>：啟用
                       <code>"AUDIO"</code> 回應模態、<code
                         >StreamingMode.BIDI</code
                       >
                       全雙工串流、繁體中文 STT/TTS，以及
                       <code>ProactivityConfig</code
-                      >。講師可在此說明：模型能力、語音互動體驗與延遲表現，都會被這個配置直接影響。
+                      >。重點說明：模型能力、語音互動體驗與延遲表現，都會被這個配置直接影響。
                     </li>
                     <li>
                       <strong
@@ -3709,7 +4835,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   >：
                   <p>
                     <code>LiveAgentService.execute_live_session()</code>
-                    是講師應該慢下來講解的核心方法。它利用 Python
+                    核心方法：利用 Python
                     <code>asyncio</code> 同步啟動兩條任務，並用
                     <code
                       >asyncio.wait(...,
@@ -3735,7 +4861,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       >，持續讀取模型回傳事件，序列化後傳回瀏覽器播放或顯示。
                     </li>
                     <li>
-                      <strong>講師提醒</strong
+                      <strong>重點提醒</strong
                       >：這裡的重點是「兩條流同時存在」。使用者可能一邊講話，模型一邊回應；任一側斷掉，另一側都必須被取消，否則就會留下仍在等待
                       I/O 的背景任務。
                     </li>
@@ -3747,7 +4873,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   >：
                   <p>
                     <code>upstream_task()</code>
-                    是觀察多模態輸入的最佳入口。講師可以現場對照瀏覽器送出的封包，讓學員看到不同媒體型別如何被轉成
+                    是觀察多模態輸入的最佳入口，透過瀏覽器送出的封包，讓學員看到不同媒體型別如何被轉成
                     Live API 可接受的資料：
                   </p>
                   <ul>
@@ -3776,7 +4902,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         >)</strong
                       >：攝像頭或螢幕共享影格會連續透過
                       <code>send_realtime()</code>
-                      推送。講師可提醒學員：影格頻率、尺寸與壓縮策略會直接影響成本、延遲與穩定性。
+                      推送。重點提醒：影格頻率、尺寸與壓縮策略會直接影響成本、延遲與穩定性。
                     </li>
                     <li>
                       <strong
@@ -3799,7 +4925,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                   <ul>
                     <li>
                       <strong>語音合成與轉錄觀察</strong
-                      >：當模型發話或使用者說話時，後端會接收即時事件與轉錄資訊。這是講師帶偵錯時最直觀的觀察點，可用來確認音訊是否真的被模型接收、模型是否正在生成語音回應。
+                      >：當模型發話或使用者說話時，後端會接收即時事件與轉錄資訊。重點確認：音訊是否真的被模型接收、模型是否正在生成語音回應。
                     </li>
                     <li>
                       <strong>Terminal Errors 必須轉成前端可理解的訊息</strong
@@ -3817,7 +4943,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         >model_dump_json(exclude_none=True, by_alias=True)</code
                       >
                       移除空欄位後送回
-                      WebSocket。講師可在此提醒：即時系統中，每個多餘欄位都會在高頻事件下變成可感知的頻寬成本。
+                      WebSocket。重點提醒：即時系統中，每個多餘欄位都會在高頻事件下變成可感知的頻寬成本。
                     </li>
                   </ul>
                 </li>
@@ -3827,7 +4953,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                     Cleanup)</strong
                   >：
                   <p>
-                    這是講師最應強調的工程收尾。當前端離線（觸發
+                    當前端離線（觸發
                     <code>WebSocketDisconnect</code
                     >）或下游任務拋出異常時，並行調度器會立即對仍在執行的
                     pending 任務發送 <code>cancel()</code>，並確保進入
@@ -4067,7 +5193,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       ry="3"
                       class="actor actor-bottom"
                     />
-                    <text
+                    <a class="gh-src" href="blob/main/app/api/routes/live.py" target="_blank" rel="noopener"><text
                       x="492"
                       y="2266.5"
                       dominant-baseline="central"
@@ -4080,7 +5206,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                       "
                     >
                       <tspan x="492" dy="-8">live.py</tspan>
-                    </text>
+                    </text></a>
                     <text
                       x="492"
                       y="2266.5"
@@ -4411,7 +5537,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         ry="3"
                         class="actor actor-top"
                       />
-                      <text
+                      <a class="gh-src" href="blob/main/app/api/routes/live.py" target="_blank" rel="noopener"><text
                         x="492"
                         y="32.5"
                         dominant-baseline="central"
@@ -4424,7 +5550,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                         "
                       >
                         <tspan x="492" dy="-8">live.py</tspan>
-                      </text>
+                      </text></a>
                       <text
                         x="492"
                         y="32.5"
@@ -6402,7 +7528,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                 <li>
                   <strong
                     >相依性注入與生命週期一致性
-                    (<code>app/container.py</code>)</strong
+                    (<a class="gh-src" href="blob/main/app/container.py" target="_blank" rel="noopener"><code>app/container.py</code></a>)</strong
                   >：
                   <p>
                     使用
@@ -6417,7 +7543,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                 <li>
                   <strong
                     >會話開關與 Prompt 狀態自省
-                    (<code>app/services/session_service.py</code>)</strong
+                    (<a class="gh-src" href="blob/main/app/services/session_service.py" target="_blank" rel="noopener"><code>app/services/session_service.py</code></a>)</strong
                   >：
                   <p>
                     前端對功能按鍵（如同理心對話或主動發話）的更新，被包裝成一個系統事件並透過
@@ -6433,7 +7559,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                 <li>
                   <strong
                     >低延遲多模態圖片優化
-                    (<code>app/streaming/upstream.py</code>)</strong
+                    (<a class="gh-src" href="blob/main/app/streaming/upstream.py" target="_blank" rel="noopener"><code>app/streaming/upstream.py</code></a>)</strong
                   >：
                   <p>
                     在 WebSocket
@@ -6461,40 +7587,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             </div>
           </details>
 
-          <!-- 改善 4：講師提醒與實作觀察 Gotchas -->
-          <div class="callout callout-warning">
-            <strong>💡 講師提醒與實作觀察 (INSTRUCTOR GOTCHAS)</strong>
-            <ul>
-              <li>
-                <strong>先讓學員看見 Echo，再說明為什麼要過濾。</strong><br />
-                在非同步 Runner 發送消息時，ADK 可能拋出包含使用者原始輸入的轉發
-                Event。講師可以先示範如果不攔截會造成前端重複對話氣泡，再回到
-                <code>is_echoed_user_input()</code> 說明事件邊界的必要性。
-              </li>
-              <li>
-                <strong>圖片縮放要從使用者體驗說起，而不是從限制說起。</strong
-                ><br />
-                Gemini Live
-                接收過大的圖片或影格時，可能引發維度錯誤或顯著延遲。帶學員看
-                <code>upstream.py</code>
-                時，請強調這段處理的目標是維持即時互動流暢度：限制尺寸、轉
-                RGB、移除透明通道、輸出
-                JPEG，都是為了讓模型更快、更穩定地消費影像。
-              </li>
-              <li>
-                <strong>斷線清理是 Live WebSocket 實作的收尾主題。</strong
-                ><br />
-                當使用者關閉頁面、麥克風中斷或模型端回傳 terminal error
-                時，後端若仍阻塞在
-                <code>runner.run_live</code>
-                迭代中，就會留下背景協程與網路資源。請帶學員對照
-                <code>asyncio.wait(..., return_when=FIRST_EXCEPTION)</code
-                >、pending task cancel、以及
-                <code>live_request_queue.close()</code
-                >，理解為什麼即時系統的穩定性取決於清理邏輯是否完整。
-              </li>
-            </ul>
-          </div>
+
 
           <div class="codelab-step-nav">
             <a class="prev" href="#step-2">第一站：地端環境啟動</a>
@@ -6509,6 +7602,10 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
               安全性與隱私保護 (Security First)
             </h2>
           </div>
+          <div class="callout callout-note">
+            <strong>⏱ 時段：11:55 – 12:05（10 分鐘）</strong>
+            <p>本章節聚焦企業級安全設計，重點說明 JWT、PII 遮蔽與審計日誌的實作要點。</p>
+          </div>
           <p>
             在保險金融領域，使用者敏感資訊（PII）與合規性是首要命脈。我們實作了多層次縱深防禦機制：
           </p>
@@ -6519,7 +7616,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
               <ul>
                 <li>
                   所有核心 API (包含 WebSocket) 都會經過
-                  <code>app/security/auth.py</code> 的 Token 驗證。
+                  <a class="gh-src" href="blob/main/app/security/auth.py" target="_blank" rel="noopener"><code>app/security/auth.py</code></a> 的 Token 驗證。
                 </li>
                 <li>
                   支援 OAuth2 密碼驗證流，實現多端權杖核對。REST API 採用 Header
@@ -6531,18 +7628,18 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             <li>
               <strong>PII 敏感資料遮蔽 (PII Redaction)</strong>：
               <p>
-                實作於 <code>app/security/pii.py</code>，透過自定義 Regex
+                實作於 <a class="gh-src" href="blob/main/app/security/pii.py" target="_blank" rel="noopener"><code>app/security/pii.py</code></a>，透過自定義 Regex
                 高效過濾敏感資訊，支援去識別化（Redaction）與雜湊化（Hashing）。例如，在資料發送給外網
                 LLM 之前，會對台灣身分證字號、Email、電話進行自動轉換：
               </p>
               <pre><code class="language-python"># pii.py 正則比對示例
-      TAIWAN_ID_RE = re.compile(r"\b[A-Z][12]\d{8}\b", re.I)
-      redacted, findings = redact_text(input_text) # 將 ID 轉為 [REDACTED_TW_ID]</code></pre>
+TAIWAN_ID_RE = re.compile(r"\b[A-Z][12]\d{8}\b", re.I)
+redacted, findings = redact_text(input_text) # 將 ID 轉為 [REDACTED_TW_ID]</code></pre>
             </li>
             <li>
               <strong>雜湊鏈防竄改審計日誌 (Hash Chain Audit Log)</strong>：
               <p>
-                在 <code>app/services/audit_log_service.py</code> 中實作。所有
+                在 <a class="gh-src" href="blob/main/app/services/audit_log_service.py" target="_blank" rel="noopener"><code>app/services/audit_log_service.py</code></a> 中實作。所有
                 Agent 動作與工具呼叫在 PII
                 遮蔽後，會依序寫入資料庫審計日誌（Audit Log）。
               </p>
@@ -6562,8 +7659,18 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
           <div class="codelab-step__header">
             <span class="codelab-step__num">5</span>
             <h2 class="codelab-step__title">
-              品質保證：測試與評估 (QA &amp; Eval)
+              <a
+                class="title-link"
+                href="blob/main/docs/features/testing.md"
+                target="_blank"
+                rel="noopener"
+                >品質保證：測試與評估 (QA &amp; Eval)</a
+              >
             </h2>
+          </div>
+          <div class="callout callout-note">
+            <strong>⏱ 時段：12:05 – 12:10（5 分鐘）</strong>
+            <p>本章節快速概覽測試金字塔與 ADK 評估框架，強調 AI 系統測試策略的不同之處。</p>
           </div>
           <p>
             保證 AI
@@ -6571,7 +7678,22 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             評估 (ADK Evals)」的雙重驗證迴圈：
           </p>
 
-          <h3>A. 本地測試金字塔 (Testing Pyramid)</h3>
+          <div class="gh-head-row">
+            <h3>A. 本地測試金字塔 (Testing Pyramid)</h3>
+            <a
+              class="gh-btn"
+              href="tree/main/tests"
+              target="_blank"
+              rel="noopener"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+              在 GitHub 查看 <code>tests/</code>
+            </a>
+          </div>
           <p>
             使用 <code>pytest</code> 搭配
             <code>pytest-asyncio</code> 實作完整的自動化測試套件（詳見
@@ -6584,8 +7706,8 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
               >
               <ul>
                 <li>
-                  驗證會話管理 CRUD (<code>test_session_service.py</code>)
-                  與使用者資料檢索邏輯 (<code>test_user_service.py</code>)。
+                  驗證會話管理 CRUD (<a class="gh-src" href="blob/main/tests/test_session_service.py" target="_blank" rel="noopener"><code>test_session_service.py</code></a>)
+                  與使用者資料檢索邏輯 (<a class="gh-src" href="blob/main/tests/unit/test_user_service.py" target="_blank" rel="noopener"><code>test_user_service.py</code></a>)。
                 </li>
               </ul>
             </li>
@@ -6596,7 +7718,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
                 <li>
                   驗證 API 路由在未授權下拋出 401
                   錯誤、審計日誌雜湊鏈防竄改是否無縫串接，以及 PII
-                  遮蔽演算法的正確性 (<code>test_pii_redaction.py</code>)。
+                  遮蔽演算法的正確性 (<a class="gh-src" href="blob/main/tests/security/test_pii_redaction.py" target="_blank" rel="noopener"><code>test_pii_redaction.py</code></a>)。
                 </li>
               </ul>
             </li>
@@ -6612,7 +7734,30 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             </li>
           </ul>
 
-          <h3>B. ADK 智慧評估迴圈 (Eval-Fix Loop)</h3>
+          <div class="gh-head-row">
+            <h3>
+              <a
+                class="title-link"
+                href="https://adk.dev/evaluate/"
+                target="_blank"
+                rel="noopener"
+                >B. ADK 智慧評估迴圈 (Eval-Fix Loop)</a
+              >
+            </h3>
+            <a
+              class="gh-btn"
+              href="tree/main/tests/eval"
+              target="_blank"
+              rel="noopener"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+              在 GitHub 查看 <code>tests/eval/</code>
+            </a>
+          </div>
           <p>
             傳統 pytest
             無法對模型「答非所問」或「幻覺推薦」進行量化打分。因此，我們利用
@@ -6621,33 +7766,25 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
           </p>
           <ol>
             <li>
-              <strong>核心對話 (Core Evals)</strong>：<code
-                >make eval-core</code
-              >
+              <strong>核心對話 (Core Evals)</strong>：<a class="gh-src" href="blob/main/Makefile#L444" target="_blank" rel="noopener"><code>make eval-core</code></a>
               (驗證基本保單搜尋、推薦關聯與完整資訊補全)。
             </li>
             <li>
-              <strong>安全性邊界 (Safety Evals)</strong>：<code
-                >make eval-safety</code
-              >
+              <strong>安全性邊界 (Safety Evals)</strong>：<a class="gh-src" href="blob/main/Makefile#L473" target="_blank" rel="noopener"><code>make eval-safety</code></a>
               (驗證系統抵禦惡意 Prompt Injection 的能力，並確保 PII 不被 echo
               回應給用戶)。
             </li>
             <li>
-              <strong>即時互動情境 (Live Evals)</strong>：<code
-                >make eval-live</code
-              >
+              <strong>即時互動情境 (Live Evals)</strong>：<a class="gh-src" href="blob/main/Makefile#L525" target="_blank" rel="noopener"><code>make eval-live</code></a>
               (針對 Live 模式下的情感共鳴 (Affective Empathy) 與主動建議評分)。
             </li>
             <li>
-              <strong>會話歷史記憶 (Session Aware)</strong>：<code
-                >make eval-session-aware</code
-              >
+              <strong>會話歷史記憶 (Session Aware)</strong>：<a class="gh-src" href="blob/main/Makefile#L511" target="_blank" rel="noopener"><code>make eval-session-aware</code></a>
               (檢核 Agent 是否能記住上個回合的使用者偏好或歷史推薦)。
             </li>
             <li>
               <strong>全域指標評估 (All-in-One)</strong>：執行
-              <code>make eval-all</code>。遍歷所有 evalsets
+              <a class="gh-src" href="blob/main/Makefile#L583" target="_blank" rel="noopener"><code>make eval-all</code></a>。遍歷所有 evalsets
               並產出視覺化報告，評分準則涵蓋
               <code>Instruction Following</code>、<code
                 >Tool Selection Accuracy</code
@@ -6665,14 +7802,41 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
         <section class="codelab-step" id="step-6">
           <div class="codelab-step__header">
             <span class="codelab-step__num">6</span>
-            <h2 class="codelab-step__title">營運與觀測 (Observability)</h2>
+            <h2 class="codelab-step__title">
+              <a
+                class="title-link"
+                href="https://adk.dev/integrations/bigquery-agent-analytics/"
+                target="_blank"
+                rel="noopener"
+                >營運與觀測 (Observability)</a
+              >
+            </h2>
+          </div>
+          <div class="callout callout-note">
+            <strong>⏱ 時段：12:10 – 12:15（5 分鐘）</strong>
+            <p>本章節展示 OpenTelemetry 分散式追蹤與 Cloud Monitoring 整合，了解如何「看見」AI Agent 的行為。</p>
           </div>
           <p>
             當 AI Agent
             開始處理真實世界的業務，我們需要實時、全方位的「觀測之眼」。專案實作了多維度的可觀測性架構：
           </p>
 
-          <h3>A. OpenTelemetry 分散式追蹤 (Agent Tracing)</h3>
+          <div class="gh-head-row">
+            <h3>A. OpenTelemetry 分散式追蹤 (Agent Tracing)</h3>
+            <a
+              class="gh-btn"
+              href="blob/main/docs/features/obs.md"
+              target="_blank"
+              rel="noopener"
+            >
+              <svg viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+                />
+              </svg>
+              在 GitHub 查看 <code>obs.md</code>
+            </a>
+          </div>
           <ul>
             <li>
               <strong>標準 Conventions</strong>：符合 OpenTelemetry 針對 GenAI
@@ -6683,7 +7847,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             <li>
               <strong>自定義追蹤裝飾器</strong>：
               <p>
-                在會話意識與狀態管理工具（<code>app/tools/session_tools.py</code>）中，我們使用
+                在會話意識與狀態管理工具（<a class="gh-src" href="blob/main/app/tools/session_tools.py" target="_blank" rel="noopener"><code>app/tools/session_tools.py</code></a>）中，我們使用
                 <code>@tracer.start_as_current_span</code> 裝飾本地操作（如
                 <code>save_user_profile</code>），可在 GCP Trace Explorer
                 內深度洞察各工具在雙向非同步環境下的精確耗時。
@@ -6707,7 +7871,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
 
           <h3>C. BigQuery Agent Analytics 與成本監控</h3>
           <p>
-            我們在 <code>app/config.py</code> 整合了
+            我們在 <a class="gh-src" href="blob/main/app/config.py" target="_blank" rel="noopener"><code>app/config.py</code></a> 整合了
             <code>BigQueryAgentAnalyticsPlugin</code
             >。此插件會非同步將對話的生命週期事件（如
             <code>LLM_REQUEST</code
@@ -6718,20 +7882,20 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             <li>
               <strong>Token 成本即時剖析</strong>：
               <pre><code class="language-sql">-- 計算平均 Token 消耗與 LLM 延遲
-      SELECT
-      AVG(usage_total_tokens) as avg_tokens,
-      AVG(total_ms) as avg_llm_ms
-      FROM `your_project.agent_analytics.v_llm_response`;</code></pre>
+SELECT
+AVG(usage_total_tokens) as avg_tokens,
+AVG(total_ms) as avg_llm_ms
+FROM `your_project.agent_analytics.v_llm_response`;</code></pre>
             </li>
             <li>
               <strong>最耗時工具排行 (Bottleneck Analysis)</strong>：
               <pre><code class="language-sql">SELECT
-      tool_name,
-      COUNT(*) as call_count,
-      AVG(total_ms) as avg_latency_ms
-      FROM `your_project.agent_analytics.v_tool_completed`
-      GROUP BY tool_name
-      ORDER BY avg_latency_ms DESC;</code></pre>
+tool_name,
+COUNT(*) as call_count,
+AVG(total_ms) as avg_latency_ms
+FROM `your_project.agent_analytics.v_tool_completed`
+GROUP BY tool_name
+ORDER BY avg_latency_ms DESC;</code></pre>
             </li>
           </ol>
 
@@ -6739,7 +7903,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             <strong>OBSERVABILITY GRACEFUL DEGRADATION:</strong>
             <p>
               可觀測性架構具備<b>優雅降級</b>特性。在本地執行
-              <code>make playground</code>時，若偵測到無 GCP 環境，OTel
+              <a class="gh-src" href="blob/main/Makefile#L603" target="_blank" rel="noopener"><code>make playground</code></a>時，若偵測到無 GCP 環境，OTel
               自動切換至 No-Op 模式，不拖累本地開發效能；BigQuery
               插件若未配置環境變數則自動跳過初始化。
             </p>
@@ -6755,8 +7919,18 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
           <div class="codelab-step__header">
             <span class="codelab-step__num">7</span>
             <h2 class="codelab-step__title">
-              個人沙盒環境：Dev 部署 (Dev Deployment)
+              <a
+                class="title-link"
+                href="blob/main/deployment/docs/dev.md"
+                target="_blank"
+                rel="noopener"
+                >個人沙盒環境：Dev 部署 (Dev Deployment)</a
+              >
             </h2>
+          </div>
+          <div class="callout callout-note">
+            <strong>⏱ 時段：12:15 – 12:20（5 分鐘）</strong>
+            <p>本章節快速概覽 Dev 個人沙盒的部署流程，理解從本地到雲端的第一步。</p>
           </div>
           <p>
             在進入正式 Staging 與 Production
@@ -6770,7 +7944,7 @@ docker logs -f insurance-frontend # 即時查看前端 Next.js 運行日誌</cod
             儲存桶中的 Terraform 遠端狀態管理。
           </p>
 
-          <h3>一、 第一階段：先決條件與 OIDC / GCP 身分驗證 (Prerequisites)</h3>
+          <h3>一、先決條件與 OIDC / GCP 身分驗證 (Prerequisites)</h3>
           <p>
             在開始部署前，必須先在本地主機完成環境變數配置，並透過 Google Cloud
             SDK 授權取得本機程式執行憑證（ADC）：
@@ -6806,63 +7980,118 @@ gcloud auth application-default login</code></pre>
             </li>
           </ol>
 
-          <h3>二、 第二階段：雲端基礎設施與容器服務部署 (Infrastructure)</h3>
+          <h3>二、雲端基礎設施與容器服務部署 (Infrastructure)</h3>
           <p>
             得益於專案中高度封裝的 <code>Makefile</code>，Terraform 初始化與
             Backend 遠端 State GCS Bucket
             的檢查建立已完全自動化。我們只需依序執行以下三個核心指令：
           </p>
-          <ol>
-            <li>
-              <strong>生成 Terraform 設定檔並確保 State Bucket 存在</strong>：
-              <p>
-                此指令會自動分析 <code>.env</code> 設定，檢查雲端是否已存在
-                Terraform 專屬 State Bucket（如
-                <code>gs://&lt;GCP_PROJECT_ID&gt;-terraform-state</code
-                >），若不存在則會自動在雲端建立，並動態生成本地的
-                <code>dev.tfbackend</code> 設定檔：
-              </p>
-              <pre><code class="language-bash">make tf-gen-config</code></pre>
-            </li>
-            <li>
-              <strong>建置並推送多模態 Docker 映像檔至 Artifact Registry</strong
-              >：
-              <p>
-                此步驟會自動在雲端建立 Artifact Registry 儲存庫（預設名稱為
-                <code>insurance-agent-repo</code>）、並在本地建置後端
-                FastAPI、前端 Next.js 以及 Toolbox MCP
-                容器映像檔，隨後安全推送到雲端儲存庫中：
-              </p>
-              <pre><code class="language-bash">make build-push</code></pre>
-            </li>
-            <li>
-              <strong>初始化並套用 Terraform 雲端資源部署</strong>：
-              <p>
-                這會載入剛才生成的 backend
-                設定，執行初始化並正式套用、點亮所有的雲端資源部署計畫：
-              </p>
-              <pre><code class="language-bash">make tf-init
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <ol>
+                  <li>
+                    <strong>生成 Terraform 設定檔並確保 State Bucket 存在</strong>：
+                    <p>
+                      此指令會自動分析 <code>.env</code> 設定，檢查雲端是否已存在
+                      Terraform 專屬 State Bucket（如
+                      <code>gs://&lt;GCP_PROJECT_ID&gt;-terraform-state</code
+                      >），若不存在則會自動在雲端建立，並動態生成本地的
+                      <code>dev.tfbackend</code> 設定檔：
+                    </p>
+                    <pre><code class="language-bash">make tf-gen-config</code></pre>
+                  </li>
+                  <li>
+                    <strong>建置並推送多模態 Docker 映像檔至 Artifact Registry</strong
+                    >：
+                    <p>
+                      此步驟會自動在雲端建立 Artifact Registry 儲存庫（預設名稱為
+                      <code>insurance-agent-repo</code>）、並在本地建置後端
+                      FastAPI、前端 Next.js 以及 Toolbox MCP
+                      容器映像檔，隨後安全推送到雲端儲存庫中：
+                    </p>
+                    <pre><code class="language-bash">make build-push</code></pre>
+                  </li>
+                  <li>
+                    <strong>初始化並套用 Terraform 雲端資源部署</strong>：
+                    <p>
+                      這會載入剛才生成的 backend
+                      設定，執行初始化並正式套用、點亮所有的雲端資源部署計畫：
+                    </p>
+                    <pre><code class="language-bash">make tf-init
 make tf-plan
 make tf-apply</code></pre>
-              <div class="callout callout-tip">
-                <strong
-                  >💡 雲端自動化專家提示 (Cloud Deployment Shortcuts)：</strong
-                >
-                <ul>
-                  <li>
-                    如果你想一鍵初始化並套用 Terraform，可執行：<code
-                      >make setup-dev-env</code
-                    >
+                    <div class="callout callout-tip">
+                      <strong
+                        >💡 雲端自動化專家提示 (Cloud Deployment Shortcuts)：</strong
+                      >
+                      <ul>
+                        <li>
+                          如果你想一鍵初始化並套用 Terraform，可執行：<a class="gh-src" href="blob/main/Makefile#L327" target="_blank" rel="noopener"><code>make tf-apply</code></a>
+                        </li>
+                        <li>
+                          如果你想自動一鍵打包映像檔、推送並 Apply 部署，可執行：<a class="gh-src" href="blob/main/Makefile#L429" target="_blank" rel="noopener"><code>make gcp-deploy</code></a>
+                        </li>
+                      </ul>
+                    </div>
                   </li>
-                  <li>
-                    如果你想自動一鍵打包映像檔、推送並 Apply 部署，可執行：<code
-                      >make gcp-deploy</code
-                    >
-                  </li>
-                </ul>
+                </ol>
               </div>
-            </li>
-          </ol>
+              <div class="tab-panel" data-platform="windows">
+                <ol>
+                  <li>
+                    <strong>生成 Terraform 設定檔並確保 State Bucket 存在</strong>：
+                    <p>
+                      此指令會自動分析 <code>.env</code> 設定，檢查雲端是否已存在
+                      Terraform 專屬 State Bucket（如
+                      <code>gs://&lt;GCP_PROJECT_ID&gt;-terraform-state</code
+                      >），若不存在則會自動在雲端建立，並動態生成本地的
+                      <code>dev.tfbackend</code> 設定檔：
+                    </p>
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 tf-gen-config</code></pre>
+                  </li>
+                  <li>
+                    <strong>建置並推送多模態 Docker 映像檔至 Artifact Registry</strong
+                    >：
+                    <p>
+                      此步驟會自動在雲端建立 Artifact Registry 儲存庫（預設名稱為
+                      <code>insurance-agent-repo</code>）、並在本地建置後端
+                      FastAPI、前端 Next.js 以及 Toolbox MCP
+                      容器映像檔，隨後安全推送到雲端儲存庫中：
+                    </p>
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 build-push</code></pre>
+                  </li>
+                  <li>
+                    <strong>初始化並套用 Terraform 雲端資源部署</strong>：
+                    <p>
+                      這會載入剛才生成的 backend
+                      設定，執行初始化並正式套用、點亮所有的雲端資源部署計畫：
+                    </p>
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 tf-init -EnvName dev
+.\scripts\dev.ps1 tf-plan -EnvName dev
+.\scripts\dev.ps1 tf-apply -EnvName dev</code></pre>
+                    <div class="callout callout-tip">
+                      <strong
+                        >💡 雲端自動化專家提示 (Cloud Deployment Shortcuts)：</strong
+                      >
+                      <ul>
+                        <li>
+                          如果你想一鍵初始化並套用 Terraform，可執行：<a class="gh-src" href="blob/main/scripts/dev.ps1" target="_blank" rel="noopener"><code>.\scripts\dev.ps1 tf-apply -EnvName dev</code></a>
+                        </li>
+                        <li>
+                          如果你想自動一鍵打包映像檔、推送並 Apply 部署，可執行：<a class="gh-src" href="blob/main/scripts/dev.ps1" target="_blank" rel="noopener"><code>.\scripts\dev.ps1 gcp-deploy -EnvName dev</code></a>
+                        </li>
+                      </ul>
+                    </div>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
 
           <h4>🛠️ 個人沙盒部署架構摘要 (Deployed Services)</h4>
           <p>
@@ -6915,117 +8144,207 @@ make tf-apply</code></pre>
             </tbody>
           </table>
 
-          <h3>三、 第三階段：雲端資料庫設定與 FAQ 知識庫向量化 (DB Setup)</h3>
+          <h3>三、雲端資料庫設定與 FAQ 知識庫向量化 (DB Setup)</h3>
           <p>
             在基礎設施就緒後，必須將資料表 Schema 結構寫入雲端的 Cloud SQL
             實例中，並匯入初始商品資料與 FAQ RAG
             向量資料。此指令會自動在背景啟動
             Proxy、安全獲取秘密憑證並完成一切對接：
           </p>
-          <ol>
-            <li>
-              <strong>執行自動化資料庫初始化與向量化</strong>：
-              <pre><code class="language-bash">make gcp-db-setup</code></pre>
-            </li>
-            <li>
-              <strong>自動化初始化流程說明 (Pipeline Details)</strong>：
-              <p>
-                此一鍵指令背後依序執行了以下自動化操作，保障雲端與本機流程的完美隔離：
-              </p>
-              <ul>
-                <li>
-                  <strong>自適應提取配置</strong>：透過 Terraform Output
-                  獲取雲端資料庫執行個體的 Instance Connection
-                  Name、使用者與目標 DB 名稱。
-                </li>
-                <li>
-                  <strong>安全憑證提取</strong>：從 Secret Manager
-                  中安全抓取資料庫密碼，防止密碼明文出現在日誌或腳本中。
-                </li>
-                <li>
-                  <strong>安全連線通道</strong>：在背景以本地容器啟動
-                  <code>cloud-sql-proxy</code>，並等待本地
-                  <code>5432</code> 連接埠就緒，與雲端 Cloud SQL 建立加密的 TLS
-                  安全連線通道。
-                </li>
-                <li>
-                  <strong>執行結構初始化</strong>：使用 PostgreSQL
-                  容器作為臨時用戶端，連接 Proxy 通道，依序寫入：
-                  <ul>
-                    <li>
-                      <code>db/schema.sql</code
-                      >（核心業務：建立產品、規則與使用者畫像資料表）。
-                    </li>
-                    <li>
-                      <code>db/audit_schema.sql</code
-                      >（合規審計：建立雜湊鏈稽核資料表）。
-                    </li>
-                    <li>
-                      <code>db/seed.sql</code
-                      >（預設商品：寫入商品種子資料與保單檢索關聯規則）。
-                    </li>
-                  </ul>
-                </li>
-                <li>
-                  <strong>匯入預設測試使用者</strong>：運行
-                  <code>scripts/seed_user.py</code
-                  >，在雲端資料庫中安全寫入測試帳號（<code
-                    >testuser / password123</code
-                  >）。
-                </li>
-                <li>
-                  <strong>FAQ RAG 向量知識庫載入 (Vector Ingestion)</strong
-                  >：運行
-                  <code>scripts/ingest_faq_embeddings.py</code>。此步驟會載入
-                  FAQ 文字，呼叫
-                  <strong>Vertex AI Text Embeddings API</strong> 產生 768
-                  維度的高精度嵌入向量（Embedding），隨後安全存入 Cloud SQL 的
-                  pgvector 向量資料表中。
-                </li>
-                <li>
-                  <strong>回收通道與清理</strong
-                  >：初始化完成後，自動關閉背景運行的 Proxy 進程，釋放系統資源。
-                </li>
-              </ul>
-            </li>
-            <li>
-              <strong>手動連線與除錯連線資訊（選用）</strong>：
-              <p>
-                如果您需要手動連線至雲端 Cloud SQL
-                進行檢測，可使用以下輔助指令：
-              </p>
-              <pre><code class="language-bash">make tf-db-password  # 從 Secret Manager 提取並列印密碼
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <ol>
+                  <li>
+                    <strong>執行自動化資料庫初始化與向量化</strong>：
+                    <pre><code class="language-bash">make gcp-db-setup</code></pre>
+                  </li>
+                  <li>
+                    <strong>自動化初始化流程說明 (Pipeline Details)</strong>：
+                    <p>
+                      此一鍵指令背後依序執行了以下自動化操作，保障雲端與本機流程的完美隔離：
+                    </p>
+                    <ul>
+                      <li>
+                        <strong>自適應提取配置</strong>：透過 Terraform Output
+                        獲取雲端資料庫執行個體的 Instance Connection
+                        Name、使用者與目標 DB 名稱。
+                      </li>
+                      <li>
+                        <strong>安全憑證提取</strong>：從 Secret Manager
+                        中安全抓取資料庫密碼，防止密碼明文出現在日誌或腳本中。
+                      </li>
+                      <li>
+                        <strong>安全連線通道</strong>：在背景以本地容器啟動
+                        <code>cloud-sql-proxy</code>，並等待本地
+                        <code>5432</code> 連接埠就緒，與雲端 Cloud SQL 建立加密的 TLS
+                        安全連線通道。
+                      </li>
+                      <li>
+                        <strong>執行結構初始化</strong>：使用 PostgreSQL
+                        容器作為臨時用戶端，連接 Proxy 通道，依序寫入：
+                        <ul>
+                          <li>
+                            <a class="gh-src" href="blob/main/db/schema.sql" target="_blank" rel="noopener"><code>db/schema.sql</code></a>（核心業務：建立產品、規則與使用者畫像資料表）。
+                          </li>
+                          <li>
+                            <a class="gh-src" href="blob/main/db/audit_schema.sql" target="_blank" rel="noopener"><code>db/audit_schema.sql</code></a>（合規審計：建立雜湊鏈稽核資料表）。
+                          </li>
+                          <li>
+                            <a class="gh-src" href="blob/main/db/seed.sql" target="_blank" rel="noopener"><code>db/seed.sql</code></a>（預設商品：寫入商品種子資料與保單檢索關聯規則）。
+                          </li>
+                        </ul>
+                      </li>
+                      <li>
+                        <strong>匯入預設測試使用者</strong>：運行
+                        <a class="gh-src" href="blob/main/scripts/seed_user.py" target="_blank" rel="noopener"><code>scripts/seed_user.py</code></a>，在雲端資料庫中安全寫入測試帳號（<code
+                          >testuser / password123</code
+                        >）。
+                      </li>
+                      <li>
+                        <strong>FAQ RAG 向量知識庫載入 (Vector Ingestion)</strong
+                        >：運行
+                        <a class="gh-src" href="blob/main/scripts/ingest_faq_embeddings.py" target="_blank" rel="noopener"><code>scripts/ingest_faq_embeddings.py</code></a>。此步驟會載入
+                        FAQ 文字，呼叫
+                        <strong>Vertex AI Text Embeddings API</strong> 產生 768
+                        維度的高精度嵌入向量（Embedding），隨後安全存入 Cloud SQL 的
+                        pgvector 向量資料表中。
+                      </li>
+                      <li>
+                        <strong>回收通道與清理</strong
+                        >：初始化完成後，自動關閉背景運行的 Proxy 進程，釋放系統資源。
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <strong>手動連線與除錯連線資訊（選用）</strong>：
+                    <p>
+                      如果您需要手動連線至雲端 Cloud SQL
+                      進行檢測，可使用以下輔助指令：
+                    </p>
+                    <pre><code class="language-bash">make tf-db-password  # 從 Secret Manager 提取並列印密碼
 make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安全通道</code></pre>
-            </li>
-          </ol>
+                  </li>
+                </ol>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <ol>
+                  <li>
+                    <strong>執行自動化資料庫初始化與向量化</strong>：
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 gcp-db-setup -EnvName dev</code></pre>
+                  </li>
+                  <li>
+                    <strong>自動化初始化流程說明 (Pipeline Details)</strong>：
+                    <p>
+                      此一鍵指令背後依序執行了以下自動化操作，保障雲端與本機流程的完美隔離：
+                    </p>
+                    <ul>
+                      <li>
+                        <strong>自適應提取配置</strong>：透過 Terraform Output
+                        獲取雲端資料庫執行個體的 Instance Connection
+                        Name、使用者與目標 DB 名稱。
+                      </li>
+                      <li>
+                        <strong>安全憑證提取</strong>：從 Secret Manager
+                        中安全抓取資料庫密碼，防止密碼明文出現在日誌或腳本中。
+                      </li>
+                      <li>
+                        <strong>安全連線通道</strong>：在背景以本地容器啟動
+                        <code>cloud-sql-proxy</code>，並等待本地
+                        <code>5432</code> 連接埠就緒，與雲端 Cloud SQL 建立加密的 TLS
+                        安全連線通道。
+                      </li>
+                      <li>
+                        <strong>執行結構初始化</strong>：使用 PostgreSQL
+                        容器作為臨時用戶端，連接 Proxy 通道，依序寫入：
+                        <ul>
+                          <li>
+                            <a class="gh-src" href="blob/main/db/schema.sql" target="_blank" rel="noopener"><code>db/schema.sql</code></a>（核心業務：建立產品、規則與使用者畫像資料表）。
+                          </li>
+                          <li>
+                            <a class="gh-src" href="blob/main/db/audit_schema.sql" target="_blank" rel="noopener"><code>db/audit_schema.sql</code></a>（合規審計：建立雜湊鏈稽核資料表）。
+                          </li>
+                          <li>
+                            <a class="gh-src" href="blob/main/db/seed.sql" target="_blank" rel="noopener"><code>db/seed.sql</code></a>（預設商品：寫入商品種子資料與保單檢索關聯規則）。
+                          </li>
+                        </ul>
+                      </li>
+                      <li>
+                        <strong>匯入預設測試使用者</strong>：運行
+                        <a class="gh-src" href="blob/main/scripts/seed_user.py" target="_blank" rel="noopener"><code>scripts/seed_user.py</code></a>，在雲端資料庫中安全寫入測試帳號（<code
+                          >testuser / password123</code
+                        >）。
+                      </li>
+                      <li>
+                        <strong>FAQ RAG 向量知識庫載入 (Vector Ingestion)</strong
+                        >：運行
+                        <a class="gh-src" href="blob/main/scripts/ingest_faq_embeddings.py" target="_blank" rel="noopener"><code>scripts/ingest_faq_embeddings.py</code></a>。此步驟會載入
+                        FAQ 文字，呼叫
+                        <strong>Vertex AI Text Embeddings API</strong> 產生 768
+                        維度的高精度嵌入向量（Embedding），隨後安全存入 Cloud SQL 的
+                        pgvector 向量資料表中。
+                      </li>
+                      <li>
+                        <strong>回收通道與清理</strong
+                        >：初始化完成後，自動關閉背景運行的 Proxy 進程，釋放系統資源。
+                      </li>
+                    </ul>
+                  </li>
+                  <li>
+                    <strong>手動連線與除錯連線資訊（選用）</strong>：
+                    <p>
+                      如果您需要手動連線至雲端 Cloud SQL
+                      進行檢測，可使用以下輔助指令：
+                    </p>
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 tf-db-password -EnvName dev  # 從 Secret Manager 提取並列印密碼
+.\scripts\dev.ps1 gcp-db-proxy   -EnvName dev  # 手動在本地背景拉起 5432 對應雲端 SQL 的安全通道</code></pre>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
 
-          <h3>四、 第四階段：存取與測試雲端服務 (Access & Verification)</h3>
+          <h3>四、存取與測試雲端服務 (Access & Verification)</h3>
           <p>
-            恭喜！當基礎設施建立完成，且雲端資料庫與 FAQ 知識庫順利初始化完畢後，您部署於 Google Cloud Run 的雲端服務便已正式就緒。現在，讓我們開始對雲端沙盒環境進行端到端的對話與功能測試。
+            恭喜！當基礎設施建立完成，且雲端資料庫與 FAQ
+            知識庫順利初始化完畢後，您部署於 Google Cloud Run
+            的雲端服務便已正式就緒。現在，讓我們開始對雲端沙盒環境進行端到端的對話與功能測試。
           </p>
 
           <ol>
             <li>
               <strong>取得前端 Cloud Run URL (Frontend URL)</strong>：
-              <p>
-                您可以使用以下幾種方式獲取前端服務的公開存取網址：
-              </p>
+              <p>您可以使用以下幾種方式獲取前端服務的公開存取網址：</p>
               <ul>
                 <li>
                   <strong>方式 A（終端機指令，最快）</strong>：
-                  <p>在專案根目錄下執行以下指令，直接從 Terraform 狀態中讀取前端服務的 URL：</p>
+                  <p>
+                    在專案根目錄下執行以下指令，直接從 Terraform
+                    狀態中讀取前端服務的 URL：
+                  </p>
                   <pre><code class="language-bash">cd deployment/terraform/dev && terraform output -raw frontend_url</code></pre>
                 </li>
                 <li>
                   <strong>方式 B（檢視部署輸出日誌）</strong>：
                   <p>
-                    回顧您執行 <code>make setup-dev-env</code> 或 <code>make tf-apply</code> 結束時，終端機會列印出 <code>db_initialization_instructions</code> 區塊，其中已包含該前端網址與測試帳密資訊。
+                    回顧您執行
+                    <a class="gh-src" href="blob/main/Makefile#L327" target="_blank" rel="noopener"><code>make tf-apply</code></a> 結束時，終端機會列印出
+                    <code>db_initialization_instructions</code>
+                    區塊，其中已包含該前端網址與測試帳密資訊。
                   </p>
                 </li>
                 <li>
                   <strong>方式 C（GCP 主控台）</strong>：
                   <p>
-                    登入 GCP Console，導航至 <strong>Cloud Run</strong> 服務列表，找到名為 <code>insurance-agent-dev-frontend</code>（或包含您專案名稱的 frontend）的服務，其上方標註的「URL」即為您的前端網址。
+                    登入 GCP Console，導航至
+                    <strong>Cloud Run</strong> 服務列表，找到名為
+                    <code>insurance-agent-dev-frontend</code
+                    >（或包含您專案名稱的
+                    frontend）的服務，其上方標註的「URL」即為您的前端網址。
                   </p>
                 </li>
               </ul>
@@ -7034,19 +8353,30 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
             <li>
               <strong>開啟瀏覽器與安全登入 (Login)</strong>：
               <p>
-                複製前端 Cloud Run URL 並在瀏覽器中開啟（建議加上 <code>/login</code> 路徑，例如：<code>https://insurance-agent-dev-frontend-xxxxx.run.app/login</code>）。
+                複製前端 Cloud Run URL 並在瀏覽器中開啟（建議加上
+                <code>/login</code>
+                路徑，例如：<code>https://insurance-agent-dev-frontend-xxxxx.run.app/login</code>）。
               </p>
-              <p>請使用在第三階段中已匯入至 Cloud SQL 的預設測試使用者認證進行登入：</p>
+              <p>
+                請使用在第三階段中已匯入至 Cloud SQL
+                的預設測試使用者認證進行登入：
+              </p>
               <ul>
-                <li><strong>測試帳號 (Username)</strong>：<code>testuser</code></li>
-                <li><strong>測試密碼 (Password)</strong>：<code>password123</code></li>
+                <li>
+                  <strong>測試帳號 (Username)</strong>：<code>testuser</code>
+                </li>
+                <li>
+                  <strong>測試密碼 (Password)</strong>：<code>password123</code>
+                </li>
               </ul>
             </li>
 
             <li>
               <strong>端到端對話功能實測 (E2E Functional Testing)</strong>：
               <p>
-                登入成功後，您將進入整合了 <strong>Google ADK Workbench</strong> 的精美前端對話控制台。您可以進行以下測試來驗證系統的正確性：
+                登入成功後，您將進入整合了
+                <strong>Google ADK Workbench</strong>
+                的精美前端對話控制台。您可以進行以下測試來驗證系統的正確性：
               </p>
               <ul>
                 <li>
@@ -7055,34 +8385,53 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
                     在對話框中輸入：「<code>保單等待期是什麼意思？</code>」或「<code>如何申請理賠？</code>」。
                   </p>
                   <p>
-                    <em>驗證重點：</em>觀察 Agent 是否會正確調用 <strong>MCP Toolbox</strong> 的 RAG 檢索工具，自 Cloud SQL 向量資料庫（pgvector）中提取對應的 FAQ 參考文本，並生成專業合規且不含重複 Echoed User Input 的回答。
+                    <em>驗證重點：</em>觀察 Agent 是否會正確調用
+                    <strong>MCP Toolbox</strong> 的 RAG 檢索工具，自 Cloud SQL
+                    向量資料庫（pgvector）中提取對應的 FAQ
+                    參考文本，並生成專業合規且不含重複 Echoed User Input
+                    的回答。
                   </p>
                 </li>
                 <li>
                   <strong>狀態追蹤 (State Inspector) 測試</strong>：
                   <p>
-                    在對話中告知 Agent 您的個人資訊，例如：「<code>我今年 35 歲，年預算大概 2 萬元左右。</code>」。
+                    在對話中告知 Agent 您的個人資訊，例如：「<code
+                      >我今年 35 歲，年預算大概 2 萬元左右。</code
+                    >」。
                   </p>
                   <p>
-                    <em>驗證重點：</em>當對話完成後，檢視右側的 <strong>State Tree</strong> 面板，確認 <code>user_profile</code> 中的 <code>age</code> 與 <code>budget</code> 欄位是否已同步更新。這代表 Agent 已正確調用狀態更新工具（如 <code>save_user_profile</code>）。
+                    <em>驗證重點：</em>當對話完成後，檢視右側的
+                    <strong>State Tree</strong> 面板，確認
+                    <code>user_profile</code> 中的 <code>age</code> 與
+                    <code>budget</code> 欄位是否已同步更新。這代表 Agent
+                    已正確調用狀態更新工具（如
+                    <code>save_user_profile</code>）。
                   </p>
                 </li>
                 <li>
                   <strong>多模態即時互動 (Multimodal Live API) 測試</strong>：
                   <p>
-                    點擊畫面下方的「語音對話」按鈕以啟用雙向串流模式。此時瀏覽器會請求麥克風權限，並與後端建立 WebSocket 雙向低延遲連線。
+                    點擊畫面下方的「語音對話」按鈕以啟用雙向串流模式。此時瀏覽器會請求麥克風權限，並與後端建立
+                    WebSocket 雙向低延遲連線。
                   </p>
                   <p>
-                    <em>驗證重點：</em>對著麥克風說話，觀察 <strong>WaveformVisualizer</strong> 顯示的即時波形，並確認 Agent 是否能以極低延遲的語音直接語音回覆您。這能完美驗證 <strong>Gemini Live API</strong> 在雲端生產環境下的語音流暢度。
+                    <em>驗證重點：</em>對著麥克風說話，觀察
+                    <strong>WaveformVisualizer</strong> 顯示的即時波形，並確認
+                    Agent 是否能以極低延遲的語音直接語音回覆您。這能完美驗證
+                    <strong>Gemini Live API</strong>
+                    在雲端生產環境下的語音流暢度。
                   </p>
                 </li>
                 <li>
                   <strong>視訊與螢幕感知測試</strong>：
                   <p>
-                    在 Live 模式下，嘗試開啟視訊鏡頭或分享您的螢幕，並詢問 Agent：「<code>你看得見我分享的畫面嗎？幫我分析一下。</code>」。
+                    在 Live 模式下，嘗試開啟視訊鏡頭或分享您的螢幕，並詢問
+                    Agent：「<code>你看得見我分享的畫面嗎？幫我分析一下。</code>」。
                   </p>
                   <p>
-                    <em>驗證重點：</em>這將啟用 Next.js 的影格採樣並將 JPEG 壓縮封包透過 WebSocket 上游傳遞至後端，實測 Gemini 的多模態即時視覺感知能力。
+                    <em>驗證重點：</em>這將啟用 Next.js 的影格採樣並將 JPEG
+                    壓縮封包透過 WebSocket 上游傳遞至後端，實測 Gemini
+                    的多模態即時視覺感知能力。
                   </p>
                 </li>
               </ul>
@@ -7091,11 +8440,17 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
             <li>
               <strong>雲端日誌與維運觀察 (Cloud Logs)</strong>：
               <p>
-                為了更深入地理解後端行為，您可以同時打開終端機，執行以下指令以即時串流（tail）方式監看雲端 FastAPI 的背景運行日誌：
+                為了更深入地理解後端行為，建議您透過 Google Cloud Console 的 Cloud Run 詳情頁，點選<strong>「日誌」</strong>分頁進行即時、直觀的監看（請將 <code>&lt;YOUR_GCP_PROJECT_ID&gt;</code> 替換為您的 GCP 專案 ID）：
               </p>
-              <pre><code class="language-bash">gcloud beta run services logs tail insurance-agent-dev-backend --region us-central1</code></pre>
               <p>
-                這有助於您即時觀察多模態 WebSocket 握手 (Handshake)、<code>RunConfig</code> 初始化、<code>upstream_task</code> / <code>downstream_task</code> 的併發狀態，以及每次 API 呼叫的完整 Trace。
+                <a class="gh-src" href="https://console.cloud.google.com/run/detail/us-central1/insurance-agent-backend-dev/logs" target="_blank" rel="noopener">進入 GCP Cloud Run 日誌主控台 <code>https://console.cloud.google.com/run/detail/us-central1/insurance-agent-backend-dev/logs?project=&lt;YOUR_GCP_PROJECT_ID&gt;</code></a>
+              </p>
+
+              <p>
+                這有助於您即時觀察多模態 WebSocket 握手 (Handshake)、<a class="gh-src" href="blob/main/app/services/live_agent_service.py" target="_blank" rel="noopener"><code>RunConfig</code></a>
+                初始化、<code>upstream_task</code> /
+                <code>downstream_task</code> 的併發狀態，以及每次 API 呼叫的完整
+                Trace。
               </p>
             </li>
           </ol>
@@ -7103,7 +8458,11 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
           <div class="callout callout-tip">
             <strong>🚀 貼心提示：</strong>
             <p>
-              若您在存取前端網址時遇到連線問題或載入緩慢，請參閱下方的<b>「六、 開發沙盒故障排除問答」</b>。此外，當您結束沙盒環境測試時，切記執行 <code>make tf-destroy</code> 來釋放 GCP 資源，避免產生不必要的雲端帳單費用。
+              若您在存取前端網址時遇到連線問題或載入緩慢，請參閱下方的<b
+                >「七、 開發沙盒故障排除問答」</b
+              >。此外，當您結束沙盒環境測試時，切記執行
+              <a class="gh-src" href="blob/main/Makefile#L336" target="_blank" rel="noopener"><code>make tf-destroy</code></a> 來釋放 GCP
+              資源，避免產生不必要的雲端帳單費用。
             </p>
           </div>
 
@@ -8121,7 +9480,7 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
               <strong>1. 元資料安全紀錄 (Cloud Logging - Metadata Only)</strong
               >：
               <p>
-                在 <code>app/app_utils/telemetry.py</code> 中，系統會將
+                在 <a class="gh-src" href="blob/main/app/app_utils/telemetry.py" target="_blank" rel="noopener"><code>app/app_utils/telemetry.py</code></a> 中，系統會將
                 <code>OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT</code>
                 設為 <code>NO_CONTENT</code>。因此寫入 GCP Cloud Logging
                 的日誌僅包含 API 呼叫元資料（如 Token 數、API 耗時與 Trace
@@ -8153,7 +9512,7 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
                 為了避免在 BigQuery 中重複儲存龐大的對話日誌，Terraform
                 會自動建立一個 BigQuery External Table（指向 GCS 中的 JSONL
                 檔案）與 Cloud Logging Linked Dataset。隨後利用
-                <code>deployment/terraform/sql/completions.sql</code> 自動建立
+                <a class="gh-src" href="blob/main/deployment/terraform/sql/completions.sql" target="_blank" rel="noopener"><code>deployment/terraform/sql/completions.sql</code></a> 自動建立
                 <code>completions_view</code> 視圖。我們只需用單一 SQL 查詢該
                 View，BigQuery 就會自動根據日誌中的 `messages_ref_uri` 實時 Join
                 GCS 的 JSONL Payload，實現大數據去重、Token 成本監控與幻覺排查！
@@ -8161,7 +9520,120 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
             </li>
           </ul>
 
-          <h3>五、 開發沙盒故障排除問答 (Sandbox Troubleshooting Q&A)</h3>
+          <h3>六、釋放服務與資源 (Resource Teardown / Clean Up)</h3>
+          <p>
+            當您結束個人開發沙盒（Dev
+            Sandbox）環境測試時，切記執行清理與銷毀指令，釋放 GCP
+            上的所有代管資源（例如 Cloud Run, Cloud SQL
+            等），避免持續產生不必要的雲端帳單費用。
+          </p>
+
+          <div class="platform-tabs">
+            <div class="tab-headers">
+              <button class="tab-btn active" data-platform="macos-linux">🍎 macOS / Linux</button>
+              <button class="tab-btn" data-platform="windows">🪟 Windows PowerShell</button>
+            </div>
+            <div class="tab-content">
+              <div class="tab-panel active" data-platform="macos-linux">
+                <ol>
+                  <li>
+                    <strong
+                      >銷毀開發環境的所有雲端資源 (Destroy Dev Sandbox
+                      Resources)</strong
+                    >：
+                    <p>
+                      在專案根目錄下，執行以下指令以一鍵移除所有由 Terraform 部署的
+                      Dev 資源：
+                    </p>
+                    <pre><code class="language-bash">make tf-destroy</code></pre>
+                    <div class="callout callout-warning">
+                      <strong>⚠️ 注意：資料庫資料將會遺失：</strong>
+                      <p>
+                        此操作為破壞性指令，會永久刪除 Cloud SQL 執行個體、Cloud Run
+                        服務、Secret Manager
+                        的資料庫密碼，以及與此開發環境相關的所有資料，執行前請確保無重要資料需要保留。
+                      </p>
+                    </div>
+                    <p>
+                      <em>自動修復機制：</em>本專案的
+                      <a class="gh-src" href="blob/main/Makefile#L336" target="_blank" rel="noopener"><code>make tf-destroy</code></a> 指令已內建 PostgreSQL 使用者 (Role)
+                      移除的自動修復邏輯。它會先在背景執行
+                      <code>terraform state rm</code>
+                      將可能具有依賴關聯的資料庫使用者從 Terraform State
+                      中剔除，再安全進行整機銷毀，完美避免
+                      <code
+                        >role cannot be dropped because some objects depend on
+                        it</code
+                      >
+                      的 dependency 報錯。
+                    </p>
+                  </li>
+                  <li>
+                    <strong>環境重設與再部署 (Redeployment)</strong>：
+                    <p>
+                      如果您日後需要重新點亮此個人沙盒環境，只需重複執行之前的初始化與套用指令即可：
+                    </p>
+                    <pre><code class="language-bash">make tf-apply
+make gcp-db-setup</code></pre>
+                  </li>
+                </ol>
+              </div>
+              <div class="tab-panel" data-platform="windows">
+                <ol>
+                  <li>
+                    <strong
+                      >銷毀開發環境的所有雲端資源 (Destroy Dev Sandbox
+                      Resources)</strong
+                    >：
+                    <p>
+                      在專案根目錄下，執行以下指令以一鍵移除所有由 Terraform 部署的
+                      Dev 資源：
+                    </p>
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 tf-destroy -EnvName dev</code></pre>
+                    <div class="callout callout-warning">
+                      <strong>⚠️ 注意：資料庫資料將會遺失：</strong>
+                      <p>
+                        此操作為破壞性指令，會永久刪除 Cloud SQL 執行個體、Cloud Run
+                        服務、Secret Manager
+                        的資料庫密碼，以及與此開發環境相關的所有資料，執行前請確保無重要資料需要保留。
+                      </p>
+                    </div>
+                    <p>
+                      <em>自動修復機制：</em>本專案的
+                      <a class="gh-src" href="blob/main/scripts/dev.ps1" target="_blank" rel="noopener"><code>.\scripts\dev.ps1 tf-destroy</code></a> 指令已內建 PostgreSQL 使用者 (Role)
+                      移除的自動修復邏輯。它會先在背景執行
+                      <code>terraform state rm</code>
+                      將可能具有依賴關聯的資料庫使用者從 Terraform State
+                      中剔除，再安全進行整機銷毀，完美避免
+                      <code
+                        >role cannot be dropped because some objects depend on
+                        it</code
+                      >
+                      的 dependency 報錯。
+                    </p>
+                  </li>
+                  <li>
+                    <strong>環境重設與再部署 (Redeployment)</strong>：
+                    <p>
+                      如果您日後需要重新點亮此個人沙盒環境，只需重複執行之前的初始化與套用指令即可：
+                    </p>
+                    <pre data-lang="powershell"><code class="language-powershell">.\scripts\dev.ps1 tf-apply    -EnvName dev
+.\scripts\dev.ps1 gcp-db-setup -EnvName dev</code></pre>
+                  </li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          <div class="callout callout-tip">
+            <strong>SANDBOX BENEFIT:</strong>
+            <p>
+              個人沙盒環境提供完全隔離的測試空間，讓開發者在提交程式碼前，能確信服務帳號
+              (Service Account) 與 GCP 元件在安全政策下無礙運作。
+            </p>
+          </div>
+
+          <h3>七、 開發沙盒故障排除問答 (Sandbox Troubleshooting Q&A)</h3>
           <p>
             在將資源點亮到 GCP
             個人沙盒時，若操作順序不當或狀態未同步，可能會遇到以下問題，請依照對應指示快速排除：
@@ -8195,7 +9667,7 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
                   <pre><code class="language-bash">cd deployment/terraform/dev</code></pre>
                 </li>
                 <li>
-                  根據報錯訊息中的資源路徑，執行匯入（以下為常見資源的匯入範例，請替換專案
+                  根據報報錯訊息中的資源路徑，執行匯入（以下為常見資源的匯入範例，請替換專案
                   ID）：
                   <ul>
                     <li>
@@ -8214,7 +9686,7 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
                 </li>
                 <li>
                   匯入成功後，重新執行
-                  <code>make tf-apply</code> 即可恢復正常狀態同步。
+                  <a class="gh-src" href="blob/main/Makefile#L327" target="_blank" rel="noopener"><code>make tf-apply</code></a> 即可恢復正常狀態同步。
                 </li>
               </ol>
             </div>
@@ -8238,7 +9710,7 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
                 <strong>【解決方案】</strong><br />
                 <strong
                   >本專案的
-                  <code>make tf-destroy</code> 指令已內建自動修復邏輯。</strong
+                  <a class="gh-src" href="blob/main/Makefile#L336" target="_blank" rel="noopener"><code>make tf-destroy</code></a> 指令已內建自動修復邏輯。</strong
                 >
                 它會先執行
                 <code>terraform state rm</code> 將該使用者從狀態中移除，讓
@@ -8284,7 +9756,7 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
               <p>
                 <strong>【問題原因】</strong><br />
                 這通常是 Docker 啟動掛載路徑錯誤。在
-                <code>make gcp-db-setup</code> 流程中，指令會嘗試將本機的 Google
+                <a class="gh-src" href="blob/main/Makefile#L362" target="_blank" rel="noopener"><code>make gcp-db-setup</code></a> 流程中，指令會嘗試將本機的 Google
                 Cloud 認證（ADC）掛載到
                 <code>cloud-sql-proxy</code>
                 容器中。如果本機找不到憑證檔案，或是
@@ -8350,7 +9822,7 @@ chmod 644 /tmp/adc_db_setup.json</code></pre>
                   <pre><code class="language-bash">cd deployment/terraform/dev
 terraform untaint module.agent_infrastructure.google_logging_project_bucket_config.genai_telemetry_bucket</code></pre>
                 </li>
-                <li>重新執行 <code>make tf-apply</code> 恢復正常同步。</li>
+                <li>重新執行 <a class="gh-src" href="blob/main/Makefile#L327" target="_blank" rel="noopener"><code>make tf-apply</code></a> 恢復正常同步。</li>
               </ol>
             </div>
           </details>
@@ -8383,11 +9855,11 @@ terraform untaint module.agent_infrastructure.google_logging_project_bucket_conf
                 </li>
                 <li>
                   <strong>匯入種子資料</strong>：執行
-                  <code>scripts/seed_user.py</code>，匯入系統初始測試帳號。
+                  <a class="gh-src" href="blob/main/scripts/seed_user.py" target="_blank" rel="noopener"><code>scripts/seed_user.py</code></a>，匯入系統初始測試帳號。
                 </li>
                 <li>
                   <strong>FAQ 知識庫向量化 (RAG Ingestion)</strong>：運行
-                  <code>scripts/ingest_faq_embeddings.py</code>。此步驟讀取 FAQ
+                  <a class="gh-src" href="blob/main/scripts/ingest_faq_embeddings.py" target="_blank" rel="noopener"><code>scripts/ingest_faq_embeddings.py</code></a>。此步驟讀取 FAQ
                   對話內容，並呼叫
                   <strong>Vertex AI Text Embeddings API</strong> 生成 RAG
                   向量，隨後寫入 Cloud SQL 向量資料表中。
@@ -8398,28 +9870,50 @@ terraform untaint module.agent_infrastructure.google_logging_project_bucket_conf
 
           <details class="tech-accordion">
             <summary>
-              Q: 執行 make tf-bootstrap 時遇到 Error code 9, message: repository ... does not exist or is not accessible to the Cloud Build GitHub App (installation ID: &lt;YOUR_INSTALLATION_ID&gt;) 該如何解決？
+              Q: 執行 make tf-bootstrap 時遇到 Error code 9, message: repository
+              ... does not exist or is not accessible to the Cloud Build GitHub
+              App (installation ID: &lt;YOUR_INSTALLATION_ID&gt;) 該如何解決？
             </summary>
             <div class="tech-accordion-content">
               <p>
                 <strong>【問題原因】</strong><br />
-                當前專案與 GitHub 帳號已建立連線，但 <strong>Google Cloud Build GitHub App</strong> 未被授予存取該特定儲存庫（通常為 <code>adk-insurance-recommendation-agent</code>）的權限。特別是當您曾將 GitHub App 設定為「Only select repositories（僅限選定儲存庫）」時，新建立或重新定義的儲存庫預設不會被自動勾選。
+                當前專案與 GitHub 帳號已建立連線，但
+                <strong>Google Cloud Build GitHub App</strong>
+                未被授予存取該特定儲存庫（通常為
+                <code>adk-insurance-recommendation-agent</code
+                >）的權限。特別是當您曾將 GitHub App 設定為「Only select
+                repositories（僅限選定儲存庫）」時，新建立或重新定義的儲存庫預設不會被自動勾選。
               </p>
               <p>
                 <strong>【解決方案】</strong><br />
-                前往 GitHub 帳號的 Google Cloud Build 應用程式設定頁面，手動授權存取此儲存庫。
+                前往 GitHub 帳號的 Google Cloud Build
+                應用程式設定頁面，手動授權存取此儲存庫。
               </p>
               <p><strong>【操作步驟】</strong></p>
               <ol>
                 <li>
-                  點擊或複製並瀏覽以下 Google Cloud Build GitHub App 安裝設定網址（請將其中的 <code>&lt;YOUR_INSTALLATION_ID&gt;</code> 替換為您在錯誤訊息中看到的實際安裝 ID）：
+                  點擊或複製並瀏覽以下 Google Cloud Build GitHub App
+                  安裝設定網址（請將其中的
+                  <code>&lt;YOUR_INSTALLATION_ID&gt;</code>
+                  替換為您在錯誤訊息中看到的實際安裝 ID）：
                   <pre><code class="language-bash">https://github.com/settings/installations/&lt;YOUR_INSTALLATION_ID&gt;</code></pre>
                 </li>
                 <li>
                   在 <strong>Repository access</strong> 區域：
                   <ul>
-                    <li>推薦直接選擇 <strong>All repositories</strong> 以利未來所有新專案皆能自動適用。</li>
-                    <li>或者維持 <strong>Only select repositories</strong>，並在下拉選單中搜尋 <code>adk-insurance-recommendation-agent</code>（或您的 GitHub 實際專案儲存庫），勾選後點擊 <strong>Save</strong>。</li>
+                    <li>
+                      推薦直接選擇
+                      <strong>All repositories</strong>
+                      以利未來所有新專案皆能自動適用。
+                    </li>
+                    <li>
+                      或者維持
+                      <strong>Only select repositories</strong
+                      >，並在下拉選單中搜尋
+                      <code>adk-insurance-recommendation-agent</code>（或您的
+                      GitHub 實際專案儲存庫），勾選後點擊
+                      <strong>Save</strong>。
+                    </li>
                   </ul>
                 </li>
                 <li>
@@ -8429,30 +9923,6 @@ terraform untaint module.agent_infrastructure.google_logging_project_bucket_conf
               </ol>
             </div>
           </details>
-
-          <div class="callout callout-important">
-            <strong>⚠️ 資源釋放與帳單清理提醒 (Dev Sandbox Rollback)：</strong>
-            <p>
-              當你完成雲端沙盒環境測試後，為避免持續產生 Cloud Run 與 Cloud SQL
-              的雲端資源計費，請務必執行銷毀指令清理雲端資源：
-            </p>
-            <pre
-              style="margin-top: 8px; margin-bottom: 0; padding: 10px 16px"
-            ><code class="language-bash">make tf-destroy</code></pre>
-            <em
-              >(本指令已內建 PostgreSQL
-              使用者移除機制，會自動從本地狀態中剔除使用者後再安全進行整機銷毀，避免
-              dependency 報錯)*</em
-            >
-          </div>
-
-          <div class="callout callout-tip">
-            <strong>SANDBOX BENEFIT:</strong>
-            <p>
-              個人沙盒環境提供完全隔離的測試空間，讓開發者在提交程式碼前，能確信服務帳號
-              (Service Account) 與 GCP 元件在安全政策下無礙運作。
-            </p>
-          </div>
 
           <div class="codelab-step-nav">
             <a class="prev" href="#step-6">營運與觀測</a>
@@ -8466,8 +9936,18 @@ terraform untaint module.agent_infrastructure.google_logging_project_bucket_conf
           <div class="codelab-step__header">
             <span class="codelab-step__num">8</span>
             <h2 class="codelab-step__title">
-              航向雲端：Staging 部署與 CI/CD 管線
+              <a
+                class="title-link"
+                href="blob/main/deployment/docs/cicd.md"
+                target="_blank"
+                rel="noopener"
+                >航向雲端：Staging 部署與 CI/CD 管線</a
+              >
             </h2>
+          </div>
+          <div class="callout callout-note">
+            <strong>⏱ 時段：12:20 – 12:25（5 分鐘）</strong>
+            <p>本章節概覽 Staging 部署與 CI/CD 管線設計，重點在 GitOps 流程與 Cloud Build 自動化。</p>
           </div>
           <p>
             當本機與個人沙盒（Dev）環境驗證無誤後，正式進入團隊共同擁有的
@@ -10526,14 +12006,13 @@ terraform untaint module.agent_infrastructure.google_logging_project_bucket_conf
 
           <h3>三、 CI/CD 前置準備 (Phase 0: Bootstrapping)</h3>
           <p>
-            在啟動 CI/CD 流程之前，必須確保 GCP 雲端環境與自動化流水線所需的基礎設施已準備就緒：
+            在啟動 CI/CD 流程之前，必須確保 GCP
+            雲端環境與自動化流水線所需的基礎設施已準備就緒：
           </p>
           <ol>
             <li>
               <strong>環境隔離與 GCP 專案建立</strong>：
-              <p>
-                為達到完備的環境隔離，建議至少準備三個獨立的 GCP 專案：
-              </p>
+              <p>為達到完備的環境隔離，建議至少準備三個獨立的 GCP 專案：</p>
               <ul>
                 <li><code>your-dev-project-id</code> (開發/個人沙盒環境)</li>
                 <li><code>your-staging-project-id</code> (測試/驗收環境)</li>
@@ -10543,39 +12022,68 @@ terraform untaint module.agent_infrastructure.google_logging_project_bucket_conf
             <li>
               <strong>部署 CI/CD 基礎設施 (Bootstrap)</strong>：
               <p>
-                我們提供了專屬的 Terraform 配置與自動化腳本來建立 Cloud Build 觸發器與 GitHub 連線：
+                我們提供了專屬的 Terraform 配置與自動化腳本來建立 Cloud Build
+                觸發器與 GitHub 連線：
               </p>
               <ul>
                 <li>
                   <strong>使用 Makefile 部署（推薦）</strong>：
                   <p>
-                    請確認 <code>.env</code> 檔案中已正確設定 <code>GITHUB_OWNER</code> 與 <code>GITHUB_REPO_NAME</code>，接著於根目錄執行：
+                    請確認 <code>.env</code> 檔案中已正確設定
+                    <code>GITHUB_OWNER</code> 與
+                    <code>GITHUB_REPO_NAME</code>，接著於根目錄執行：
                   </p>
                   <pre><code class="language-bash">make tf-bootstrap</code></pre>
                   <div class="callout callout-note">
                     <strong>GITHUB 授權提示 (AUTHORIZATION HINT):</strong>
                     <p>
-                      此指令會自動引導您建立 GCP 與 GitHub 之間的連線。<strong>若是首次建立連線，終端機將會暫停並提供一個授權網址</strong>。請複製該網址至瀏覽器完成 GitHub 授權，腳本會自動偵測授權完成並繼續執行後續的 Terraform 部署。
+                      此指令會自動引導您建立 GCP 與 GitHub
+                      之間的連線。<strong>若是首次建立連線，終端機將會暫停並提供一個授權網址</strong>。請複製該網址至瀏覽器完成
+                      GitHub 授權，腳本會自動偵測授權完成並繼續執行後續的
+                      Terraform 部署。
                     </p>
                   </div>
                   <div class="callout callout-warning">
-                    <strong>常見錯誤：GITHUB APP 儲存庫權限不足 (REPOSITORY ACCESS ERROR):</strong>
+                    <strong
+                      >常見錯誤：GITHUB APP 儲存庫權限不足 (REPOSITORY ACCESS
+                      ERROR):</strong
+                    >
                     <p>
-                      若在執行 <code>make tf-bootstrap</code> 期間，Terraform 拋出如下錯誤：<br>
-                      <code>Error: Error waiting to create Repository: Error waiting for Creating Repository: Error code 9, message: repository ... does not exist or is not accessible to the Cloud Build GitHub App (installation ID: &lt;YOUR_INSTALLATION_ID&gt;)</code><br>
-                      這是因為雖然 GitHub 連線已授權，但 <strong>Google Cloud Build GitHub App</strong> 尚未被允許存取此特定的儲存庫。請將上述錯誤訊息中的 <code>&lt;YOUR_INSTALLATION_ID&gt;</code> 套入並瀏覽以下管理連結： <a href="https://github.com/settings/installations" target="_blank">https://github.com/settings/installations</a>（或加上特定安裝 ID <code>https://github.com/settings/installations/&lt;YOUR_INSTALLATION_ID&gt;</code>），將 <strong>Repository access</strong> 修改為 <strong>All repositories</strong>，或者手動在 <strong>Only select repositories</strong> 中搜尋並新增 <code>adk-insurance-recommendation-agent</code>（或您實際的儲存庫名稱）並儲存。儲存完畢後，重新執行 <code>make tf-bootstrap</code> 即可順利通過。
+                      若在執行 <a class="gh-src" href="blob/main/Makefile#L283" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> 期間，Terraform
+                      拋出如下錯誤：<br />
+                      <code
+                        >Error: Error waiting to create Repository: Error
+                        waiting for Creating Repository: Error code 9, message:
+                        repository ... does not exist or is not accessible to
+                        the Cloud Build GitHub App (installation ID:
+                        &lt;YOUR_INSTALLATION_ID&gt;)</code
+                      ><br />
+                      這是因為雖然 GitHub 連線已授權，但
+                      <strong>Google Cloud Build GitHub App</strong>
+                      尚未被允許存取此特定的儲存庫。請將上述錯誤訊息中的
+                      <code>&lt;YOUR_INSTALLATION_ID&gt;</code>
+                      套入並瀏覽以下管理連結：
+                      <a
+                        href="https://github.com/settings/installations"
+                        target="_blank"
+                        >https://github.com/settings/installations</a
+                      >（或加上特定安裝 ID
+                      <code
+                        >https://github.com/settings/installations/&lt;YOUR_INSTALLATION_ID&gt;</code
+                      >），將 <strong>Repository access</strong> 修改為
+                      <strong>All repositories</strong>，或者手動在
+                      <strong>Only select repositories</strong> 中搜尋並新增
+                      <code>adk-insurance-recommendation-agent</code
+                      >（或您實際的儲存庫名稱）並儲存。儲存完畢後，重新執行
+                      <a class="gh-src" href="blob/main/Makefile#L283" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> 即可順利通過。
                     </p>
                   </div>
                 </li>
                 <li>
                   <strong>手動執行部署（進階）</strong>：
-                  <p>
-                    如果您不希望使用 Makefile，可以手動執行腳本建立連線：
-                  </p>
+                  <p>如果您不希望使用 Makefile，可以手動執行腳本建立連線：</p>
                   <pre><code class="language-bash">bash scripts/setup_github_conn.sh</code></pre>
-                  <p>
-                    完成授權後，再切換至 bootstrap 目錄執行 Terraform：
-                  </p>
+                  <p>完成授權後，再切換至 bootstrap 目錄執行 Terraform：</p>
                   <pre><code class="language-bash">cd deployment/terraform/bootstrap
 terraform init
 terraform apply \
@@ -10588,18 +12096,29 @@ terraform apply \
             <li>
               <strong>準備遠端 Terraform State 儲存桶</strong>：
               <p>
-                各環境（dev, staging, prod）需要遠端雲端儲存桶來管理狀態檔。使用一鍵指令快速生成設定：
+                各環境（dev, staging,
+                prod）需要遠端雲端儲存桶來管理狀態檔。使用一鍵指令快速生成設定：
               </p>
               <pre><code class="language-bash">make tf-gen-config</code></pre>
               <p>
-                <em>(此指令會根據 <code>.env</code> 的 GCP_PROJECT_ID，自動在 GCP 建立專屬的 Terraform State Bucket，並生成各環境對應的 <code>.tfbackend</code> 設定檔。)</em>
+                <em
+                  >(此指令會根據 <code>.env</code> 的 GCP_PROJECT_ID，自動在 GCP
+                  建立專屬的 Terraform State Bucket，並生成各環境對應的
+                  <code>.tfbackend</code> 設定檔。)</em
+                >
               </p>
             </li>
           </ol>
 
           <h3>四、 首次部署「冷啟動 (Cold Start)」與資料庫初始化</h3>
           <p>
-            在自動化 CI/CD 觸發器接管之前，<strong>必須手動執行一次初始部署（Cold Start）</strong>，用以建立 Artifact Registry 儲存庫、遠端 State Bucket 並初始化雲端資源。<strong>這一步是不可省略的，否則後續 CI/CD 會因缺乏資源與遠端狀態而失敗或產生重複的 Cloud SQL 實體。</strong>
+            在自動化 CI/CD 觸發器接管之前，<strong
+              >必須手動執行一次初始部署（Cold Start）</strong
+            >，用以建立 Artifact Registry 儲存庫、遠端 State Bucket
+            並初始化雲端資源。<strong
+              >這一步是不可省略的，否則後續 CI/CD
+              會因缺乏資源與遠端狀態而失敗或產生重複的 Cloud SQL 實體。</strong
+            >
           </p>
           <ol>
             <li>
@@ -10611,7 +12130,8 @@ ENV_NAME=staging</code></pre>
             <li>
               <strong>建立遠端狀態儲存桶 (極重要)</strong>：
               <p>
-                <strong>務必執行此步驟</strong>，確保本地與未來的 Cloud Build 使用相同的 Terraform 狀態，防止重複建立資料庫：
+                <strong>務必執行此步驟</strong>，確保本地與未來的 Cloud Build
+                使用相同的 Terraform 狀態，防止重複建立資料庫：
               </p>
               <pre><code class="language-bash">make tf-gen-config</code></pre>
             </li>
@@ -10626,7 +12146,8 @@ ENV_NAME=staging</code></pre>
 make tf-apply</code></pre>
             </li>
             <li>
-              <strong>初始化資料庫結構與 FAQ 向量化 (Schema &amp; Seed)</strong>：
+              <strong>初始化資料庫結構與 FAQ 向量化 (Schema &amp; Seed)</strong
+              >：
               <p>我們透過 Cloud Run Job 或本地指令進行初始化：</p>
               <pre><code class="language-bash">make gcp-db-setup</code></pre>
             </li>
@@ -10634,107 +12155,177 @@ make tf-apply</code></pre>
           <div class="callout callout-warning">
             <strong>ORPHAN DATABASE CLEANUP:</strong>
             <p>
-              如果在學習、測試或重複部署過程中操作不當（如未同步狀態檔），導致 GCP 上產生了多個名稱類似的孤兒（Orphaned）Cloud SQL 實體，可以使用 
-              <code>make gcp-cleanup-orphans</code> 
+              如果在學習、測試或重複部署過程中操作不當（如未同步狀態檔），導致
+              GCP 上產生了多個名稱類似的孤兒（Orphaned）Cloud SQL 實體，可以使用
+              <a class="gh-src" href="blob/main/Makefile#L419" target="_blank" rel="noopener"><code>make gcp-cleanup-orphans</code></a>
               輔助列出並一鍵清除多餘資源，避免產生額外雲端帳單費用。
             </p>
           </div>
 
-          <h3>五、 工作負載身分同盟 (Workload Identity Federation, WIF)</h3>
-          <p>
-            為避免使用含有高度安全洩漏風險的靜態 GCP 服務帳戶私鑰金鑰檔 (.json)，專案整合了 <strong>OIDC (OpenID Connect) WIF 技術</strong>：
-          </p>
-          <ul>
-            <li>
-              <strong>建立 Identity Pool 與 Provider</strong>：
-              <p>
-                在 CI 主專案中執行 gcloud 註冊 <code>github-pool</code> 與 <code>github-provider</code>，並將 attribute 對應至 GitHub Repository 屬性。
-              </p>
-            </li>
-            <li>
-              <strong>無私鑰身分模擬 (Service Account Impersonation)</strong>：
-              <p>
-                模擬 <code>cicd-runner</code> 服務帳號。此 runner SA 在 Staging 與 Production 專案中被授予遵循最小特權原則的安全性角色：
-              </p>
-              <ul>
-                <li><code>roles/run.admin</code> (Cloud Run 管理)</li>
-                <li><code>roles/storage.admin</code> (GCS 儲存管理)</li>
-                <li><code>roles/cloudsql.admin</code> (SQL 實例管理)</li>
-                <li><code>roles/secretmanager.admin</code> (Secret 管理)</li>
-                <li><code>roles/bigquery.admin</code> (BigQuery 分析管理)</li>
-              </ul>
-            </li>
-          </ul>
-          <div class="callout callout-tip">
-            <strong>WIF SETUP DOCUMENTATION:</strong>
-            <p>
-              若欲了解 Workload Identity Federation (WIF) 的詳細原理與完整設定步驟，請參考專案目錄下的 <code>deployment/docs/wif-setup.md</code>。
-            </p>
-          </div>
-
-          <h3>六、 CI/CD 觸發器與晉升政策 (Promotion Policy)</h3>
+          <h3>五、 CI/CD 觸發器與晉升政策 (Promotion Policy)</h3>
           <ol>
             <li>
-              <strong>持續整合 (PR 階段 - <code>.cloudbuild/pr_checks.yaml</code>)</strong>：
+              <strong
+                >持續整合 (PR 階段 -
+                <a class="gh-src" href="blob/main/.cloudbuild/pr_checks.yaml" target="_blank" rel="noopener"><code>.cloudbuild/pr_checks.yaml</code></a>)</strong
+              >：
               <p>
-                針對所有 Pull Request 執行。任務包含代碼檢查 (Linting)、單元與整合測試 (Unit Tests)、Terraform Plan (預覽基礎架構變更)，確保基礎架構變更安全並利於同僚審查。
+                針對所有 Pull Request 執行。任務包含代碼檢查
+                (Linting)、單元與整合測試 (Unit Tests)、Terraform Plan
+                (預覽基礎架構變更)，確保基礎架構變更安全並利於同僚審查。
               </p>
             </li>
             <li>
-              <strong>Staging 環境部署 (合併 main - <code>.cloudbuild/staging.yaml</code>)</strong>：
+              <strong
+                >Staging 環境部署 (合併 main -
+                <a class="gh-src" href="blob/main/.cloudbuild/staging.yaml" target="_blank" rel="noopener"><code>.cloudbuild/staging.yaml</code></a>)</strong
+              >：
               <p>
-                當代碼合併至 <code>main</code> 分支時觸發。任務包含：建置 Docker 映像檔（以 Commit SHA 為標記）、推送到 Artifact Registry、更新 Staging 環境基礎架構、最後<strong>自動執行部署後評估 (ADK Eval - <code>make eval-all</code>)</strong>。若 AI 評估指標（如 PII 合規、推薦正確度）未達標準，管線將自動中斷。
+                當代碼合併至 <code>main</code> 分支時觸發。任務包含：建置 Docker
+                映像檔（以 Commit SHA 為標記）、推送到 Artifact Registry、更新
+                Staging 環境基礎架構、最後<strong
+                  >自動執行部署後評估 (ADK Eval -
+                  <a class="gh-src" href="blob/main/Makefile#L583" target="_blank" rel="noopener"><code>make eval-all</code></a>)</strong
+                >。若 AI 評估指標（如 PII
+                合規、推薦正確度）未達標準，管線將自動中斷。
               </p>
             </li>
             <li>
-              <strong>Prod 生產環境發布 (建立 Git Tag - <code>.cloudbuild/deploy-to-prod.yaml</code>)</strong>：
+              <strong
+                >Prod 生產環境發布 (建立 Git Tag -
+                <a class="gh-src" href="blob/main/.cloudbuild/deploy-to-prod.yaml" target="_blank" rel="noopener"><code>.cloudbuild/deploy-to-prod.yaml</code></a>)</strong
+              >：
               <p>
-                當建立 Git Tag（如 <code>v1.0.0</code>）時觸發。任務包含：<strong>將 Staging 映像檔標記 (Retag) 為生產版本 <code>prod-latest</code></strong>（避免重新編譯、確保代碼絕對一致性）、更新 Production 環境基礎架構（<code>deployment/terraform/prod</code>），生產環境預設開啟高可用（High Availability）配置，如更高級別的 DB Tier 與 Deletion Protection。
+                當建立 Git Tag（如
+                <code>v1.0.0</code>）時觸發。任務包含：<strong
+                  >將 Staging 映像檔標記 (Retag) 為生產版本
+                  <code>prod-latest</code></strong
+                >（避免重新編譯、確保代碼絕對一致性）、更新 Production
+                環境基礎架構（<code>deployment/terraform/prod</code>），生產環境預設開啟高可用（High
+                Availability）配置，如更高級別的 DB Tier 與 Deletion
+                Protection。
               </p>
             </li>
           </ol>
 
-          <h3>七、 維運與管理 (Operations &amp; Migration)</h3>
+          <h3>六、 維運與管理 (Operations &amp; Migration)</h3>
           <ul>
             <li>
               <strong>秘密管理 (Secret Management)</strong>：
               <p>
-                資料庫密碼、API Keys 等敏感資訊皆儲存在 <strong>GCP Secret Manager</strong>。Terraform 自動生成的密碼會同步寫入 Secret，並僅授權給具有最小權限的 Cloud Run 服務進行存取。
+                資料庫密碼、API Keys 等敏感資訊皆儲存在
+                <strong>GCP Secret Manager</strong>。Terraform
+                自動生成的密碼會同步寫入 Secret，並僅授權給具有最小權限的 Cloud
+                Run 服務進行存取。
               </p>
             </li>
             <li>
               <strong>資料庫遷移 (DB Migration)</strong>：
               <p>
-                基礎架構中配置了一個 <strong>Cloud Run Job</strong> (<code>db-migration</code>)。當資料庫 Schema 有變更時，您可以直接透過 GCP Web Console 手動執行此 Job，或利用 <code>make gcp-db-setup</code> 指令同步雲端資料庫結構。
+                基礎架構中配置了一個
+                <strong>Cloud Run Job</strong>
+                (<code>db-migration</code>)。當資料庫 Schema
+                有變更時，您可以直接透過 GCP Web Console 手動執行此 Job，或利用
+                <a class="gh-src" href="blob/main/Makefile#L362" target="_blank" rel="noopener"><code>make gcp-db-setup</code></a> 指令同步雲端資料庫結構。
               </p>
+            </li>
+            <li>
+              <strong>釋放服務與資源 (Resource Teardown &amp; Clean Up)</strong
+              >：
+              <p>
+                在 Staging 或 Production
+                等正式的多環境架構中，資源的生命週期管理與單獨的 Dev
+                沙盒不同。當需要完全停用、搬遷或清理 Staging / Production
+                資源，甚至拆除自動化 CI/CD 管線與 GitHub
+                連線時，請依序執行以下指令：
+              </p>
+              <ul>
+                <li>
+                  <strong>銷毀特定環境資源 (Staging / Production)</strong>：
+                  <p>
+                    若要單獨移除特定環境的 Cloud Run 服務、Cloud SQL
+                    實例與關聯的網絡，請傳入對應的 <code>ENV_NAME</code>（預設為
+                    dev）：
+                  </p>
+                  <pre><code class="language-bash">make tf-destroy ENV_NAME=staging # 銷毀 Staging 環境資源
+make tf-destroy ENV_NAME=prod    # 銷毀 Production 環境資源 (請極度謹慎！)</code></pre>
+                  <div class="callout callout-important">
+                    <strong
+                      >⚠️ 生產環境銷毀警示 (Production Deletion
+                      Warning)：</strong
+                    >
+                    <p>
+                      在生產環境執行銷毀是具備極高風險且不可逆的行為。Production
+                      環境配置通常會啟用
+                      <code>deletion_protection = true</code>
+                      (防誤刪保護)；若需要完全銷毀，必須先手動至 GCP 主控台或在
+                      Terraform 配置中將防誤刪保護關閉後，方能成功執行銷毀。
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <strong>移除跨環境共用 CI/CD 管線基礎設施</strong>：
+                  <p>
+                    若您希望徹底清除本專案建立的 CI/CD 觸發器、GitHub 連線
+                    (Workload Identity Federation) 以及跨環境共用的 Bootstrap
+                    管線，請在專案根目錄下執行：
+                  </p>
+                  <pre><code class="language-bash">make tf-bootstrap-destroy</code></pre>
+                  <div class="callout callout-warning">
+                    <strong
+                      >⚠️ 警告：這將移除共用部署管線與 GitHub 連線！</strong
+                    >
+                    <p>
+                      執行此命令會永久刪除 OIDC 授權憑證、GitHub App
+                      安全連接以及所有的 Cloud Build
+                      構建觸發器。未來若要重新啟用，必須重新執行
+                      <a class="gh-src" href="blob/main/Makefile#L283" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> 流程。
+                    </p>
+                  </div>
+                </li>
+              </ul>
             </li>
           </ul>
 
-          <h3>八、 開發者檢查清單 (Developer Checklist)</h3>
+          <h3>七、 開發者檢查清單 (Developer Checklist)</h3>
           <p>
             在將代碼發送至 Staging 或生產環境之前，請確保以下檢核點均已完成：
           </p>
           <ul class="checklist">
-            <li>✅ <strong>環境變數</strong>：<code>.env</code> 檔案中的 <code>ENV_NAME</code> 已正確設定。</li>
-            <li>✅ <strong>Terraform 狀態</strong>：已執行 <code>make tf-gen-config</code> 生成正確的 backend 配置。</li>
-            <li>✅ <strong>CI/CD 觸發器</strong>：已執行 <code>make tf-bootstrap</code> (或手動腳本) 順利建立 CI/CD 觸發器與 GitHub 連線。</li>
-            <li>✅ <strong>本地測試與評估</strong>：在本地已通過 <code>make test</code> 與 <code>make eval</code>，確認 AI 指標符合標準。</li>
+            <li>
+              ✅ <strong>環境變數</strong>：<code>.env</code> 檔案中的
+              <code>ENV_NAME</code> 已正確設定。
+            </li>
+            <li>
+              ✅ <strong>Terraform 狀態</strong>：已執行
+              <a class="gh-src" href="blob/main/Makefile#L83" target="_blank" rel="noopener"><code>make tf-gen-config</code></a> 生成正確的 backend 配置。
+            </li>
+            <li>
+              ✅ <strong>CI/CD 觸發器</strong>：已執行
+              <a class="gh-src" href="blob/main/Makefile#L283" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> (或手動腳本) 順利建立 CI/CD
+              觸發器與 GitHub 連線。
+            </li>
+            <li>
+              ✅ <strong>本地測試與評估</strong>：在本地已通過
+              <a class="gh-src" href="blob/main/Makefile#L616" target="_blank" rel="noopener"><code>make test</code></a> 與 <a class="gh-src" href="blob/main/Makefile#L575" target="_blank" rel="noopener"><code>make eval</code></a>，確認 AI
+              指標符合標準。
+            </li>
           </ul>
 
           <div class="codelab-step-nav">
             <a class="prev" href="#step-7">個人沙盒環境：Dev 部署</a>
-            <a class="next" href="#step-9"
-              >結語：技術總結</a
-            >
+            <a class="next" href="#step-9">結語：技術總結</a>
           </div>
         </section>
 
         <section class="codelab-step" id="step-9">
           <div class="codelab-step__header">
             <span class="codelab-step__num">9</span>
-            <h2 class="codelab-step__title">
-              結語：技術總結
-            </h2>
+            <h2 class="codelab-step__title">結語：技術總結</h2>
+          </div>
+          <div class="callout callout-tip">
+            <strong>⏱ 時段：12:25 – 12:30（5 分鐘）</strong>
+            <p>技術回顧與 Q&amp;A。感謝大家的參與！</p>
           </div>
           <p>👋 恭喜你完成了這份保險推薦 Agent 的全生命週期開發手冊！</p>
           <p>
@@ -10831,27 +12422,45 @@ make tf-apply</code></pre>
 
           <p><strong>🔥 課程總結與未來展望：</strong></p>
           <p>
-            恭喜各位學員！透過本次「從地端到雲端：保險推薦 Agent 全生命週期開發手冊」的實戰演練，我們共同跨越了從 PoC 原型到企業級生產部署的巨大鴻溝。
+            恭喜各位學員！透過本次「從地端到雲端：保險推薦 Agent
+            全生命週期開發手冊」的實戰演練，我們共同跨越了從 PoC
+            原型到企業級生產部署的巨大鴻溝。
           </p>
           <ul>
             <li>
-              <strong>技術跨越的起點</strong>：你已親手掌握了基於 <code>google-adk</code> 框架構建 AI Agent 的核心，學會利用結構化 System Prompt、Tool calling、以及非同步狀態同步，在不確定的模型輸出中，拉起一條高度確定的業務邏輯基準線。
+              <strong>技術跨越的起點</strong>：你已親手掌握了基於
+              <code>google-adk</code> 框架構建 AI Agent 的核心，學會利用結構化
+              System Prompt、Tool
+              calling、以及非同步狀態同步，在不確定的模型輸出中，拉起一條高度確定的業務邏輯基準線。
             </li>
             <li>
-              <strong>多模態即時交互</strong>：我們深入剖析並實作了 WebSocket 雙向媒體流，將音訊（PCM）、視訊與文字融為一體，這是邁向次世代低延遲、高互動性語音 Agent 的基石。
+              <strong>多模態即時交互</strong>：我們深入剖析並實作了 WebSocket
+              雙向媒體流，將音訊（PCM）、視訊與文字融為一體，這是邁向次世代低延遲、高互動性語音
+              Agent 的基石。
             </li>
             <li>
-              <strong>嚴格的合規防線</strong>：透過安全層（JWT 認證、PII 遮蔽、防止水平越權）與審計日誌（Audit Log）的設計，我們讓 Agent 系統在具備極致智慧的同時，也具備了金融級別的合規與可稽核性。
+              <strong>嚴格的合規防線</strong>：透過安全層（JWT 認證、PII
+              遮蔽、防止水平越權）與審計日誌（Audit Log）的設計，我們讓 Agent
+              系統在具備極致智慧的同時，也具備了金融級別的合規與可稽核性。
             </li>
             <li>
-              <strong>科學的指標評估</strong>：跳脫「感覺派」的 Prompt 微調，你學會了使用 <code>ADK Evals</code>（LLM-as-a-Judge）進行自動化打分，並配合傳統測試金字塔，建立了持續穩定的品質保證機制。
+              <strong>科學的指標評估</strong>：跳脫「感覺派」的 Prompt
+              微調，你學會了使用
+              <code>ADK Evals</code
+              >（LLM-as-a-Judge）進行自動化打分，並配合傳統測試金字塔，建立了持續穩定的品質保證機制。
             </li>
             <li>
-              <strong>雲原生架構落地</strong>：我們走過 Terraform 基礎設施即代碼（IaC）、免密鑰 WIF 安全機制，以及 Cloud Build 的三階段 CD 自動化發布，徹底實現了 Dev、Staging 與 Production 環境的嚴格隔離。
+              <strong>雲原生架構落地</strong>：我們走過 Terraform
+              基礎設施即代碼（IaC）、免密鑰 WIF 安全機制，以及 Cloud Build
+              的三階段 CD 自動化發布，徹底實現了 Dev、Staging 與 Production
+              環境的嚴格隔離。
             </li>
           </ul>
           <p>
-            這不只是一門實作課，更是你邁向<strong>企業級 GenAI 技術架構師</strong>的堅實起步。期待各位將這套全生命週期的開發方法論與架構範式，帶回日常的業務場景中，建構出更具商業價值、更安全可控的 AI 應用！
+            這不只是一門實作課，更是你邁向<strong
+              >企業級 GenAI 技術架構師</strong
+            >的堅實起步。期待各位將這套全生命週期的開發方法論與架構範式，帶回日常的業務場景中，建構出更具商業價值、更安全可控的
+            AI 應用！
           </p>
 
           <hr />
@@ -10861,16 +12470,457 @@ make tf-apply</code></pre>
               Edition) | 2026-06-21</em
             >
           </p>
+
+          <div class="codelab-step-nav">
+            <a class="prev" href="#step-8"
+              >航向雲端：Staging 部署與 CI/CD 管線</a
+            >
+            <a class="next" href="#step-10">延伸學習：完整技術棧與生態資源</a>
+          </div>
+        </section>
+
+        <section class="codelab-step" id="step-10">
+          <div class="codelab-step__header">
+            <span class="codelab-step__num">10</span>
+            <h2 class="codelab-step__title">延伸學習：完整技術棧與生態資源</h2>
+          </div>
+          <p>
+            在完成本手冊的各個實戰章節後，你已建構了一套極具現代化架構特徵的
+            GenAI
+            代理人系統。為了幫助你更上一層樓，以下為本專案所採用的<b>完整技術棧總覽</b>、以及
+            <b>Google ADK 官方與生態重要資源連結</b
+            >，方便你隨時深入查閱、擴展系統功能或參與社群討論。
+          </p>
+
+          <h3>A. 完整專案技術棧總覽 (Full Tech Stack Overview)</h3>
+          <p>
+            本專案不僅是一個 PoC
+            (概念驗證)，更整合了業界生產環境所需的軟硬體架構，涵蓋前端、後端、Agent
+            框架及基礎設施等四大核心模組：
+          </p>
+          <table class="codelab-table">
+            <thead>
+              <tr>
+                <th>模組 (Module)</th>
+                <th>使用技術 (Technologies)</th>
+                <th>關鍵實作元件 / 本地對應檔案</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>1. 前端 UI 系統</strong></td>
+                <td>Next.js 15 (App Router) + TypeScript + Vanilla CSS</td>
+                <td>
+                  <ul>
+                    <li>
+                      多模態即時 Hooks: <code>useAudioCapture</code>,
+                      <code>useLiveAgent</code>
+                    </li>
+                    <li>波形視覺化: <a class="gh-src" href="blob/main/frontend/components/WaveformVisualizer.tsx" target="_blank" rel="noopener"><code>WaveformVisualizer.tsx</code></a></li>
+                    <li>
+                      決策軌跡與狀態: <a class="gh-src" href="blob/main/frontend/components/TimelineNodes.tsx" target="_blank" rel="noopener"><code>TimelineNodes.tsx</code></a>,
+                      <a class="gh-src" href="blob/main/frontend/components/StateTree.tsx" target="_blank" rel="noopener"><code>StateTree.tsx</code></a>
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>2. 後端核心服務</strong></td>
+                <td>
+                  FastAPI (Python) + asyncio + JWT Auth + Regex PII Filter
+                </td>
+                <td>
+                  <ul>
+                    <li>
+                      WebSocket 串流調度: <a class="gh-src" href="blob/main/app/services/live_agent_service.py" target="_blank" rel="noopener"><code>live_agent_service.py</code></a>
+                    </li>
+                    <li>
+                      隱私與合規安全: <a class="gh-src" href="blob/main/app/security/pii.py" target="_blank" rel="noopener"><code>pii.py</code></a>, <a class="gh-src" href="blob/main/app/security/auth.py" target="_blank" rel="noopener"><code>auth.py</code></a>
+                    </li>
+                    <li>審計日誌與雜湊鏈: <a class="gh-src" href="blob/main/app/services/audit_log_service.py" target="_blank" rel="noopener"><code>audit_log_service.py</code></a></li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>3. Agent 框架與 RAG</strong></td>
+                <td>
+                  Google ADK (<code>google-adk</code>) + MCP (Model Context
+                  Protocol) Toolbox + pgvector
+                </td>
+                <td>
+                  <ul>
+                    <li>
+                      AI 代理人定義: <a class="gh-src" href="blob/main/app/agent.py" target="_blank" rel="noopener"><code>app/agent.py</code></a> 與系統提示詞
+                      <code>prompts/</code>
+                    </li>
+                    <li>
+                      MCP 工具集關聯: <a class="gh-src" href="blob/main/db/tools.local.yaml" target="_blank" rel="noopener"><code>db/tools.local.yaml</code></a>,
+                      <a class="gh-src" href="blob/main/db/tools.cloud.yaml" target="_blank" rel="noopener"><code>db/tools.cloud.yaml</code></a>
+                    </li>
+                    <li>
+                      FAQ 向量檢索:
+                      <a class="gh-src" href="blob/main/scripts/ingest_faq_embeddings.py" target="_blank" rel="noopener"><code>scripts/ingest_faq_embeddings.py</code></a>
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+              <tr>
+                <td><strong>4. CI/CD 與基礎設施</strong></td>
+                <td>
+                  Google Cloud Platform (GCP) + Terraform + Workload Identity
+                  (WIF)
+                </td>
+                <td>
+                  <ul>
+                    <li>
+                      IaC 基礎設施即代碼: <code>deployment/terraform/</code>
+                    </li>
+                    <li>
+                      自動化發布管線:
+                      <a class="gh-src" href="blob/main/.cloudbuild/deploy-to-prod.yaml" target="_blank" rel="noopener"><code>.cloudbuild/deploy-to-prod.yaml</code></a>
+                    </li>
+                    <li>
+                      可觀測性與監控: GenAI OpenTelemetry, BigQuery Log
+                      Analytics
+                    </li>
+                  </ul>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h3>B. Google ADK &amp; Agent Platform 官方核心資源</h3>
+          <p>
+            <strong>Agent Development Kit (ADK)</strong> 是 Google Cloud
+            Platform 官方推出的開源、代碼優先 (code-first) 的 AI
+            代理人開發框架，專為構建、評估和部署企業級多代理人系統而設計。
+          </p>
+          <ul>
+            <li>
+              🌐 <strong>ADK 官方文檔門戶 (Documentation Portal)</strong>：
+              <a href="https://adk.dev" target="_blank">adk.dev</a> -
+              包含最完整的概念說明、最新版本發布說明與多語言 SDK 起手步。
+            </li>
+            <li>
+              🚀 <strong>快速入門指引 (Get Started)</strong>：
+              <a href="https://adk.dev/get-started/index.md" target="_blank"
+                >ADK Get Started</a
+              >
+              - 從零開始安裝並跑通你的第一個 Agent。
+            </li>
+            <li>
+              🐍 <strong>Python SDK 深入指南 (Python Developer Guide)</strong>：
+              <a
+                href="https://adk.dev/get-started/python/index.md"
+                target="_blank"
+                >ADK Python Guide</a
+              >
+              - 提供 Python SDK 的安裝、API 架構與最佳實踐說明。
+            </li>
+            <li>
+              🎙️
+              <strong
+                >Gemini Live API 雙向串流 (Gemini Live API Streaming)</strong
+              >：
+              <a href="https://adk.dev/streaming/index.md" target="_blank"
+                >ADK Streaming Guide</a
+              >
+              - 低延遲、雙向語音與影格同步多模態對話的底層技術細節。
+            </li>
+            <li>
+              📊 <strong>科學化 Agent 評估 (Agent Evaluation)</strong>：
+              <a href="https://adk.dev/evaluate/index.md" target="_blank"
+                >ADK Evaluate Portal</a
+              >
+              - 指標制定、自定義 Evals 以及 LLM-as-a-Judge 自動打分框架。
+            </li>
+          </ul>
+
+          <h3>C. Agent CLI (agents-cli) 與部署工具</h3>
+          <p>
+            透過命令行工具，你可以流暢地完成從地端 Sandbox
+            執行、指標評估，到一鍵雲端託管的完整流程。
+          </p>
+          <ul>
+            <li>
+              💻 <strong>Agent CLI (agents-cli) 命令手冊</strong>：
+              <a
+                href="https://adk.dev/deploy/agent-runtime/agents-cli/index.md"
+                target="_blank"
+                >agents-cli Documentation</a
+              >
+              - 包含
+              <code>scaffold</code
+              >、<code>eval</code>、<code>deploy</code>、<code>publish</code>
+              等關鍵 CLI 命令參考。
+            </li>
+            <li>
+              ⚙️ <strong>執行期配置與 Sandbox 設定 (Runtime Config)</strong>：
+              <a
+                href="https://adk.dev/runtime/runconfig/index.md"
+                target="_blank"
+                >ADK RunConfig 指引</a
+              >
+              - 教你如何設定對應的 <code>RunConfig</code>、Event Loop 以及
+              Session 狀態。
+            </li>
+            <li>
+              ☁️ <strong>部署至 Cloud Run / GKE 託管環境</strong>：
+              <a href="https://adk.dev/deploy/index.md" target="_blank"
+                >ADK Deployment Portal</a
+              >
+              - 手把手教你如何將 ADK 代理人安全打包，部署至 Google Cloud
+              Platform 上。
+            </li>
+          </ul>
+
+          <h3>D. 開源儲存庫與核心參考資源對照表 (Core Reference Resources)</h3>
+          <p>
+            為便於企業落地，Google
+            官方提供了多種腳手架（Scaffolding）與即用型的樣板專案。以下為專案核心參考資源與
+            GitHub 程式碼檢視層連結對照表：
+          </p>
+          <table class="codelab-table">
+            <thead>
+              <tr>
+                <th>資源名稱 (Resource)</th>
+                <th>類型 (Type)</th>
+                <th>GitHub 連結層 (GitHub Link Portal)</th>
+                <th>說明 (Description)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>agent-starter-pack 儲存庫</strong></td>
+                <td>📦 開源儲存庫</td>
+                <td>
+                  <a
+                    href="https://github.com/GoogleCloudPlatform/agent-starter-pack"
+                    target="_blank"
+                  >
+                    GoogleCloudPlatform/agent-starter-pack
+                  </a>
+                </td>
+                <td>
+                  企業級 AI Agent 起手包，封裝了 Terraform、Cloud Build
+                  CI/CD、OpenTelemetry Tracing
+                  儀表板，是本專案的最佳延伸實戰藍本。
+                </td>
+              </tr>
+              <tr>
+                <td><strong>agents-cli 儲存庫</strong></td>
+                <td>📦 開源工具儲存庫</td>
+                <td>
+                  <a
+                    href="https://github.com/google/agents-cli"
+                    target="_blank"
+                  >
+                    google/agents-cli
+                  </a>
+                </td>
+                <td>
+                  Google 官方推出的 AI Agents 命令行管理工具原始碼，支援 Agent
+                  與 Tool 腳手架建立、本地評估與一鍵部署托管。
+                </td>
+              </tr>
+              <tr>
+                <td><strong>google-adk-study 學習儲存庫</strong></td>
+                <td>🎓 個人學習與實踐</td>
+                <td>
+                  <a
+                    href="https://github.com/lastingyeh/google-adk-study"
+                    target="_blank"
+                  >
+                    lastingyeh/google-adk-study
+                  </a>
+                </td>
+                <td>
+                  作者個人深入研究、記錄與實踐 Google ADK (Agent Developer Kit) 的學習筆記、實作範例與架構心得，是絕佳的延伸學習資源。
+                </td>
+              </tr>
+              <tr>
+                <td><strong>ADK Cheatsheet (極速查手冊)</strong></td>
+                <td>📜 快速查閱手冊</td>
+                <td>
+                  <a
+                    href="https://github.com/GoogleCloudPlatform/agent-starter-pack/blob/main/agent_starter_pack/resources/docs/adk-cheatsheet.md"
+                    target="_blank"
+                  >
+                    adk-cheatsheet.md (GitHub)
+                  </a>
+                </td>
+                <td>
+                  快速查詢 Agent 定義、Tool/Callback 宣告與 Orchestration
+                  程式碼。
+                </td>
+              </tr>
+              <tr>
+                <td><strong>ADK Evaluation Guide (評估深度指南)</strong></td>
+                <td>📈 評估與指標手冊</td>
+                <td>
+                  <a
+                    href="https://github.com/GoogleCloudPlatform/agent-starter-pack/blob/main/agent_starter_pack/resources/docs/adk-eval-guide.md"
+                    target="_blank"
+                  >
+                    adk-eval-guide.md (GitHub)
+                  </a>
+                </td>
+                <td>指標打分、環境模擬與 User Simulation 的深度解密。</td>
+              </tr>
+              <tr>
+                <td><strong>ADK Deployment Guide (生產部署指南)</strong></td>
+                <td>🏗️ 部署與 IaC 指南</td>
+                <td>
+                  <a
+                    href="https://github.com/GoogleCloudPlatform/agent-starter-pack/blob/main/agent_starter_pack/resources/docs/adk-deploy-guide.md"
+                    target="_blank"
+                  >
+                    adk-deploy-guide.md (GitHub)
+                  </a>
+                </td>
+                <td>
+                  WIF 安全配置、CI/CD 觸發器與 Secret Manager 整合的最佳實踐。
+                </td>
+              </tr>
+              <tr>
+                <td><strong>ADK Development Guide (開發流程指南)</strong></td>
+                <td>💻 開發與最佳實踐</td>
+                <td>
+                  <a
+                    href="https://github.com/GoogleCloudPlatform/agent-starter-pack/blob/main/docs/guide/development-guide.md"
+                    target="_blank"
+                  >
+                    development-guide.md (GitHub)
+                  </a>
+                </td>
+                <td>完整開發工作流、開發階段指引與最佳實踐說明。</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout callout-tip">
+            <strong>ARCHITECTURE &amp; ECOSYSTEM REFLECTION:</strong>
+            <p>
+              掌握開源框架、靈活調度生態資源（如 MCP、ADK Evals、WIF
+              憑證模擬），是將 AI
+              原型（PoC）轉化為安全可維護之生產系統的必經之路。隨著 Gemini 3
+              以及 ADK 2.0+
+              的持續演進，期待你能運用這些工具與資源，在雲端開拓出更多充滿想像空間的保險（甚至跨行業）AI
+              代理應用！
+            </p>
+          </div>
+
+          <hr />
+          <p>
+            <em
+              >文件維護：lastingyeh (Chris) | 版本：v2.1 (Instructor & Architect
+              Edition) | 2026-06-21</em
+            >
+          </p>
+
+          <div class="codelab-step-nav">
+            <a class="prev" href="#step-9">結語：技術總結</a>
+            <span></span>
+          </div>
         </section>
       </main>
     </div>
 
     <script>
-      // Initialize syntax highlighting
+      // Initialize syntax highlighting with safety fallback
+      // ⬇️⬇️ 換新 repo 只需改這一行（網域 + repo 路徑），其餘連結皆為相對路徑 ⬇️⬇️
+      const GH_REPO =
+        'https://github.com/lastingyeh/adk-insurance-recommendation-agent';
+
       document.addEventListener('DOMContentLoaded', () => {
+        // 將相對的 blob/main、tree/main 連結補上 repo 網域（單一來源 GH_REPO）
         document
-          .querySelectorAll('pre code')
-          .forEach((el) => hljs.highlightElement(el));
+          .querySelectorAll('a[href^="blob/main/"], a[href^="tree/main/"]')
+          .forEach((a) => {
+            a.setAttribute('href', GH_REPO + '/' + a.getAttribute('href'));
+          });
+
+        if (typeof hljs !== 'undefined') {
+          document.querySelectorAll('pre code').forEach((el) => {
+            try {
+              hljs.highlightElement(el);
+            } catch (e) {
+              console.warn('Highlight failed:', e);
+            }
+          });
+        }
+
+        // 將 bash 程式碼區塊開頭的 make <target> 包成 GitHub 連結
+        // （在 hljs 高亮後執行，避免被重建覆蓋；highlight.js 對 bash 不會
+        //   把 make/target 變成 span，開頭為純文字節點，故可安全包覆）
+        const GH_BASE = GH_REPO + '/blob/main/';
+        const MAKE_LINKS = {
+          "_kill-adk-port":"Makefile#L249", "_kill-fastapi-port":"Makefile#L252", "_kill-port":"Makefile#L258",
+          "_kill-ui-port":"Makefile#L255", "backend":"Makefile#L561", "build-push":"Makefile#L101",
+          "check":"Makefile#L269", "clean":"Makefile#L550", "clean-all":"Makefile#L555",
+          "db-clean":"Makefile#L161", "db-ingest":"scripts/ingest_faq_embeddings.py", "db-init":"Makefile#L147",
+          "db-reset":"Makefile#L165", "db-seed":"scripts/seed_user.py", "db-setup":"Makefile#L158",
+          "db-up":"docker-compose.yml", "debug-fastapi":".vscode/launch.json", "deploy":"Makefile#L563",
+          "down":"docker-compose.yml", "env-check":"Makefile#L138", "env-check-gcp":"Makefile#L112",
+          "eval":"Makefile#L575", "eval-all":"Makefile#L583", "eval-core":"Makefile#L444",
+          "eval-core-case-1":"Makefile#L450", "eval-core-case-2":"Makefile#L453", "eval-core-case-3":"Makefile#L456",
+          "eval-extended":"Makefile#L459", "eval-extended-case-4":"Makefile#L464", "eval-extended-case-5":"Makefile#L467",
+          "eval-extended-case-6":"Makefile#L470", "eval-live":"Makefile#L525", "eval-live-case-1":"Makefile#L532",
+          "eval-live-case-2":"Makefile#L538", "eval-live-case-3":"Makefile#L541", "eval-live-case-4":"Makefile#L544",
+          "eval-live-dynamic":"Makefile#L535", "eval-safety":"Makefile#L473", "eval-safety-case-09":"Makefile#L484",
+          "eval-safety-case-10":"Makefile#L487", "eval-safety-case-11":"Makefile#L490", "eval-safety-case-12":"Makefile#L493",
+          "eval-safety-case-13":"Makefile#L496", "eval-safety-case-14":"Makefile#L499", "eval-safety-case-15":"Makefile#L502",
+          "eval-safety-case-16":"Makefile#L505", "eval-safety-case-17":"Makefile#L508", "eval-session-aware":"Makefile#L511",
+          "eval-session-aware-case-s1":"Makefile#L516", "eval-session-aware-case-s2":"Makefile#L519", "eval-session-aware-case-s3":"Makefile#L522",
+          "gcp-bootstrap":"Makefile#L411", "gcp-cleanup-orphans":"Makefile#L419", "gcp-db-init-info":"Makefile#L359",
+          "gcp-db-proxy":"Makefile#L350", "gcp-db-setup":"Makefile#L362", "gcp-deploy":"Makefile#L429",
+          "gcp-rollback":"Makefile#L437", "gcp-traffic-list":"Makefile#L432", "help":"Makefile#L31",
+          "install":"Makefile#L124", "install-all":"Makefile#L128", "lint":"Makefile#L596",
+          "logs":"docker-compose.yml", "playground":"Makefile#L603", "register-gemini-enterprise":"Makefile#L613",
+          "run-api":"Makefile#L202", "run-cli":"Makefile#L237", "run-fastapi":"app/api/main.py",
+          "run-web":"Makefile#L193", "sync":"Makefile#L132", "sync-all":"Makefile#L135",
+          "test":"Makefile#L616", "test-api":"Makefile#L272", "test-audit":"Makefile#L278",
+          "test-security":"Makefile#L275", "tf-apply":"Makefile#L327", "tf-bootstrap":"Makefile#L283",
+          "tf-bootstrap-destroy":"Makefile#L302", "tf-db-password":"Makefile#L347", "tf-destroy":"Makefile#L336",
+          "tf-gen-config":"Makefile#L83", "tf-init":"Makefile#L315", "tf-plan":"Makefile#L318",
+          "toolbox-logs":"Makefile#L188", "ui-build":"Makefile#L246", "ui-dev":"Makefile#L243",
+          "ui-install":"Makefile#L240", "up":"docker-compose.yml", "up-build":"docker-compose.yml",
+        };
+        document
+          .querySelectorAll('pre code[class*="language-bash"]')
+          .forEach((code) => {
+            // 掃過所有文字節點，將每一行行首的 make <target> 都包成連結
+            // （支援多行 block；hljs 把註解切成 span，但每行 make 仍在文字節點開頭）
+            Array.from(code.childNodes).forEach((node) => {
+              if (node.nodeType !== Node.TEXT_NODE) return;
+              const v = node.nodeValue;
+              const re = /(^|\n)([ \t]*)(make )([a-z0-9-]+)/g;
+              let m;
+              let last = 0;
+              let frag = null;
+              while ((m = re.exec(v))) {
+                const suffix = MAKE_LINKS[m[4]];
+                if (!suffix) continue;
+                if (!frag) frag = document.createDocumentFragment();
+                const labelStart = m.index + m[1].length + m[2].length;
+                const before = v.slice(last, labelStart);
+                if (before) frag.appendChild(document.createTextNode(before));
+                const a = document.createElement("a");
+                a.className = "gh-src";
+                a.href = GH_BASE + suffix;
+                a.target = "_blank";
+                a.rel = "noopener";
+                a.textContent = m[3] + m[4];
+                frag.appendChild(a);
+                last = labelStart + m[3].length + m[4].length;
+              }
+              if (frag) {
+                const after = v.slice(last);
+                if (after) frag.appendChild(document.createTextNode(after));
+                code.replaceChild(frag, node);
+              }
+            });
+          });
 
         // Add copy buttons to all code blocks
         document.querySelectorAll('.codelab-step pre').forEach((pre) => {
@@ -10934,6 +12984,83 @@ make tf-apply</code></pre>
         );
 
         sections.forEach((sec) => observer.observe(sec));
+
+        // ==========================================
+        // Mobile Navigation Drawer Toggle System
+        // ==========================================
+        const menuToggle = document.getElementById('menu-toggle');
+        const sidebar = document.getElementById('codelab-nav');
+        const backdrop = document.getElementById('nav-backdrop');
+
+        if (menuToggle && sidebar && backdrop) {
+          const toggleMenu = () => {
+            const isActive = sidebar.classList.toggle('active');
+            backdrop.classList.toggle('active', isActive);
+            // 當抽屜打開時，鎖定背景滾動
+            document.body.style.overflow = isActive ? 'hidden' : '';
+            if (menuToggle) {
+              menuToggle.setAttribute('aria-expanded', String(isActive));
+            }
+            if (isActive) {
+              const firstLink = sidebar.querySelector('.codelab-nav__list a');
+              if (firstLink) {
+                firstLink.focus();
+              }
+            }
+          };
+
+          const closeMenu = () => {
+            sidebar.classList.remove('active');
+            backdrop.classList.remove('active');
+            document.body.style.overflow = '';
+            if (menuToggle) {
+              menuToggle.setAttribute('aria-expanded', 'false');
+            }
+          };
+
+          // 綁定漢堡按鈕與遮罩點擊事件
+
+          const mobileQuery = window.matchMedia('(max-width: 768px)');
+          const resetMenuForDesktop = () => {
+            if (!mobileQuery.matches) {
+              closeMenu();
+            }
+          };
+
+          if (mobileQuery.addEventListener) {
+            mobileQuery.addEventListener('change', resetMenuForDesktop);
+          } else {
+            mobileQuery.addListener(resetMenuForDesktop);
+          }
+          window.addEventListener('resize', resetMenuForDesktop);
+          menuToggle.addEventListener('click', toggleMenu);
+          backdrop.addEventListener('click', closeMenu);
+
+          // 關鍵體驗優化：當使用者點選目錄項目跳轉後，自動收起抽屜
+          const navLinks = sidebar.querySelectorAll('.codelab-nav__list a');
+          navLinks.forEach((link) => {
+            link.addEventListener('click', () => {
+              if (window.innerWidth <= 768) {
+                closeMenu();
+              }
+            });
+          });
+        }
+
+        // ==========================================
+        // Responsive Table Dynamic Wrapper Injection
+        // ==========================================
+        // 自動為頁面上所有表格加上流暢的橫向滾動容器，免去手動修改 HTML 結構
+        document.querySelectorAll('.codelab-table').forEach((table) => {
+          if (
+            !table.parentNode.classList.contains('table-responsive-wrapper')
+          ) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'table-responsive-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+          }
+        });
 
         // ==========================================
         // Mermaid Zoom & Restore Interactive System
@@ -11103,10 +13230,12 @@ make tf-apply</code></pre>
           svgContainer.appendChild(clonedSvg);
 
           // Calculate initial zoom to comfortably fit inside viewport with margin/padding
-          const viewportWidth = modalBody.clientWidth - 80;
-          const viewportHeight = modalBody.clientHeight - 80;
-          const widthRatio = viewportWidth / (naturalWidth + 64); // including padding inside the canvas card
-          const heightRatio = viewportHeight / (naturalHeight + 64);
+          const viewportPadding = window.innerWidth <= 768 ? 32 : 80;
+          const contentPadding = window.innerWidth <= 768 ? 32 : 64;
+          const viewportWidth = modalBody.clientWidth - viewportPadding;
+          const viewportHeight = modalBody.clientHeight - viewportPadding;
+          const widthRatio = viewportWidth / (naturalWidth + contentPadding);
+          const heightRatio = viewportHeight / (naturalHeight + contentPadding);
 
           // Fit completely on screen, cap initial scale at 1.0 to prevent pixelation of small diagrams
           currentZoom = Math.min(widthRatio, heightRatio, 1.0);
@@ -11149,10 +13278,12 @@ make tf-apply</code></pre>
           svgContainer.appendChild(clonedImg);
 
           // Calculate initial zoom to comfortably fit inside viewport with margin/padding
-          const viewportWidth = modalBody.clientWidth - 80;
-          const viewportHeight = modalBody.clientHeight - 80;
-          const widthRatio = viewportWidth / (naturalWidth + 64);
-          const heightRatio = viewportHeight / (naturalHeight + 64);
+          const viewportPadding = window.innerWidth <= 768 ? 32 : 80;
+          const contentPadding = window.innerWidth <= 768 ? 32 : 64;
+          const viewportWidth = modalBody.clientWidth - viewportPadding;
+          const viewportHeight = modalBody.clientHeight - viewportPadding;
+          const widthRatio = viewportWidth / (naturalWidth + contentPadding);
+          const heightRatio = viewportHeight / (naturalHeight + contentPadding);
 
           // Fit completely on screen, cap initial scale at 1.0 to prevent pixelation of small images
           currentZoom = Math.min(widthRatio, heightRatio, 1.0);
@@ -11223,10 +13354,12 @@ make tf-apply</code></pre>
                   activeElement.naturalHeight || activeElement.height || 600;
               }
 
-              const viewportWidth = modalBody.clientWidth - 80;
-              const viewportHeight = modalBody.clientHeight - 80;
-              const widthRatio = viewportWidth / (naturalWidth + 64);
-              const heightRatio = viewportHeight / (naturalHeight + 64);
+              const viewportPadding = window.innerWidth <= 768 ? 32 : 80;
+              const contentPadding = window.innerWidth <= 768 ? 32 : 64;
+              const viewportWidth = modalBody.clientWidth - viewportPadding;
+              const viewportHeight = modalBody.clientHeight - viewportPadding;
+              const widthRatio = viewportWidth / (naturalWidth + contentPadding);
+              const heightRatio = viewportHeight / (naturalHeight + contentPadding);
 
               currentZoom = Math.min(widthRatio, heightRatio, 1.0);
               if (currentZoom < 0.2) currentZoom = 0.2;
@@ -11326,6 +13459,31 @@ make tf-apply</code></pre>
           },
           { passive: false },
         );
+
+        // ==========================================
+        // Platform Tabs Interactive Switching & Synced Selection
+        // ==========================================
+        document.querySelectorAll('.platform-tabs').forEach((tabContainer) => {
+          const buttons = tabContainer.querySelectorAll('.tab-btn');
+          const panels = tabContainer.querySelectorAll('.tab-panel');
+          buttons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const selectedPlatform = btn.dataset.platform;
+
+              // Sync all tab groups on the page to use the same platform
+              document.querySelectorAll('.platform-tabs').forEach((otherContainer) => {
+                const targetBtn = otherContainer.querySelector(`.tab-btn[data-platform="${selectedPlatform}"]`);
+                const targetPanel = otherContainer.querySelector(`.tab-panel[data-platform="${selectedPlatform}"]`);
+                if (targetBtn && targetPanel) {
+                  otherContainer.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+                  otherContainer.querySelectorAll('.tab-panel').forEach((p) => p.classList.remove('active'));
+                  targetBtn.classList.add('active');
+                  targetPanel.classList.add('active');
+                }
+              });
+            });
+          });
+        });
       });
     </script>
   </body>
