@@ -103,3 +103,6 @@ graphify-out/*
 
 # plans
 docs/plans/**
+
+# articles
+docs/articles/**
