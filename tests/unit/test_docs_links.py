@@ -14,6 +14,7 @@ from pathlib import Path
 
 import pytest
 
+
 def _find_repo_root() -> Path:
     """向上尋找同時含 docs/index.html 與 Makefile 的目錄（不受測試位置影響）。"""
     for parent in Path(__file__).resolve().parents:
@@ -79,8 +80,7 @@ _INLINE_MAKE = re.findall(
 @pytest.mark.parametrize("lineno,target", [(int(n), t) for n, t in _INLINE_MAKE])
 def test_inline_make_anchor_points_to_target(lineno, target):
     assert _makefile_line_defines(lineno, target), (
-        f"內文連結 make {target} 指向 Makefile#L{lineno}，"
-        f"但該行非 `{target}:` 定義"
+        f"內文連結 make {target} 指向 Makefile#L{lineno}，但該行非 `{target}:` 定義"
     )
 
 
@@ -104,8 +104,7 @@ def _make_links_file_cases():
 @pytest.mark.parametrize("target,lineno", _make_links_anchor_cases())
 def test_make_links_anchor_points_to_target(target, lineno):
     assert _makefile_line_defines(lineno, target), (
-        f"MAKE_LINKS['{target}'] 指向 Makefile#L{lineno}，"
-        f"但該行非 `{target}:` 定義"
+        f"MAKE_LINKS['{target}'] 指向 Makefile#L{lineno}，但該行非 `{target}:` 定義"
     )
 
 

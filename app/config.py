@@ -87,6 +87,7 @@ class AppRuntimeConfig:
     bigquery_analytics_dataset: str | None
     bigquery_location: str
     google_cloud_project: str | None
+    enable_semantic_guardrails: bool = True  # 是否啟用語意安全護欄
 
 
 def load_runtime_config() -> AppRuntimeConfig:
@@ -125,6 +126,7 @@ def load_runtime_config() -> AppRuntimeConfig:
         audit_retention_days=int(os.getenv("AUDIT_RETENTION_DAYS", "365")),
         audit_hash_salt=os.getenv("AUDIT_HASH_SALT", "dev-only-change-me"),
         pii_redaction_enabled=_parse_bool_env("PII_REDACTION_ENABLED", True),
+        enable_semantic_guardrails=_parse_bool_env("ENABLE_SEMANTIC_GUARDRAILS", True),
         max_output_tokens=int(os.getenv("MAX_OUTPUT_TOKENS", "2048")),
         enable_cloud_tracing=_parse_bool_env("ENABLE_CLOUD_TRACING", False),
         enable_cloud_logging=_parse_bool_env("ENABLE_CLOUD_LOGGING", False),

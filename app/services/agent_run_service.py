@@ -12,12 +12,16 @@ from datetime import datetime
 
 from google.adk.events.event import Event
 from google.adk.runners import Runner
+import logging
 from google.genai import types as genai_types
 
 from app.config import AppRuntimeConfig
 from app.security.pii import redact_text
+from app.security.semantic_guardrail import PromptInjectionException
 from app.services.audit_log_service import AuditContext, AuditLogService
 from app.services.session_service import SessionService, safe_stringify
+
+logger = logging.getLogger(__name__)
 
 
 # 定義內部 Session 工具，這些工具通常不直接對使用者顯示，而是用於後端狀態管理
@@ -171,12 +175,17 @@ def build_done_envelope(final_text: str, state: dict[str, str]) -> dict[str, obj
     }
 
 
-def build_error_envelope(message: str) -> dict[str, object]:
+def build_error_envelope(
+    message: str, error_code: str | None = None
+) -> dict[str, object]:
     """建立 Error 封包，將錯誤訊息結構化回傳給前端。"""
-    return {
+    envelope: dict[str, object] = {
         "type": "error",
         "message": message,
     }
+    if error_code:
+        envelope["error_code"] = error_code
+    return envelope
 
 
 def merge_state_patches(
@@ -655,8 +664,27 @@ class AgentRunService:
                 state=final_state,
             )
 
+        except PromptInjectionException as p_exc:
+            logger.error(
+                f"Prompt Injection detected! Session: {session_id}. Error: {p_exc}"
+            )
+            error_envelope = build_error_envelope(
+                "[SECURITY_VIOLATION] 偵測到異常輸入指令，對話已安全中止。",
+                error_code="SECURITY_VIOLATION",
+            )
+            # 記錄到審計日誌
+            if self._audit_logs and audit_context:
+                await self._audit_logs.record(
+                    context=audit_context,
+                    event_type="agent.security_violation",
+                    actor="system",
+                    sequence=sequence + 1,
+                    output_payload={"reason": str(p_exc)},
+                )
+            yield error_envelope
+
         except Exception as exc:
-            # 擷取任何非預期的例外並告知前端
+            # 擷取 any 非預期的例外並告知前端
             error_envelope = build_error_envelope(str(exc))
 
             if self._audit_logs and audit_context:

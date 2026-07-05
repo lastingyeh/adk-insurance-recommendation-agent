@@ -3,12 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from google.adk.agents import Agent
+from google.adk.apps import App
 from google.adk.runners import Runner
 from google.adk.sessions.base_session_service import BaseSessionService
 from google.adk.sessions.database_session_service import DatabaseSessionService
 
 from app.agent import AgentFactory
 from app.config import AppRuntimeConfig, load_runtime_config
+from app.security.semantic_guardrail import SemanticGuardrailPlugin
 from app.services.agent_run_service import AgentRunService
 from app.services.live_agent_service import LiveAgentService
 from app.services.readiness_service import ReadinessService
@@ -49,9 +51,14 @@ def create_runner(
     Runner 是 ADK 的執行引擎，負責協調 Agent (大腦) 與 Session Store (記憶)。
     它處理歷史對話的載入、呼叫 LLM、執行工具，並將結果存回 Session。
     """
+    from google.adk.plugins.base_plugin import BasePlugin
+
+    plugins: list[BasePlugin] = []
+    if config.enable_semantic_guardrails:
+        plugins.append(SemanticGuardrailPlugin(config))
+    app_instance = App(root_agent=agent, name=config.app_name, plugins=plugins)
     return Runner(
-        app_name=config.app_name,
-        agent=agent,
+        app=app_instance,
         session_service=session_store,
     )
 
