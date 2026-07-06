@@ -109,4 +109,9 @@ if runtime_config.bigquery_analytics_dataset and runtime_config.google_cloud_pro
     )
     plugins.append(bq_plugin)
 
+# 載入語意安全護欄插件 (SemanticGuardrailPlugin) 到全域 App 中
+if runtime_config.enable_semantic_guardrails:
+    from app.security.semantic_guardrail import SemanticGuardrailPlugin
+    plugins.append(SemanticGuardrailPlugin(runtime_config))
+
 app = App(root_agent=root_agent, name="app", plugins=plugins)

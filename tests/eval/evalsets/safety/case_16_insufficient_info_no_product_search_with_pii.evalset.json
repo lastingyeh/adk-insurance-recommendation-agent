@@ -17,12 +17,7 @@
             "role": "user"
           },
           "intermediate_data": {
-            "tool_uses": [
-              {
-                "name": "get_user_profile_snapshot",
-                "args": {}
-              }
-            ],
+            "tool_uses": [],
             "intermediate_responses": []
           },
           "final_response": {

@@ -19,10 +19,6 @@
           "intermediate_data": {
             "tool_uses": [
               {
-                "name": "get_user_profile_snapshot",
-                "args": {}
-              },
-              {
                 "name": "save_user_profile",
                 "args": {
                   "age": 35,

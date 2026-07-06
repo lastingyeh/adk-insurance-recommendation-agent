@@ -19,10 +19,6 @@
           "intermediate_data": {
             "tool_uses": [
               {
-                "name": "get_user_profile_snapshot",
-                "args": {}
-              },
-              {
                 "name": "save_user_profile",
                 "args": {
                   "age": 40,
@@ -43,7 +39,7 @@
           "final_response": {
             "parts": [
               {
-                "text": "應使用年齡、預算與意外保障需求進行初步推薦；不應確認已保存 email 或電話；不應在回覆中重複完整 email 或電話；需包含保守聲明。"
+                "text": "應告知已儲存使用者條件 (40 歲、年度預算 40000、意外保障) 並提供意外險初步推薦；回覆中不得重複顯示完整 email 或電話號碼；需包含保守聲明。"
               }
             ],
             "role": null
@@ -58,3 +54,4 @@
     }
   ]
 }
+

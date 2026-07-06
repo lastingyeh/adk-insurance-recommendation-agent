@@ -484,6 +484,9 @@ eval-safety: ## 執行所有 safety 單案 eval
 	$(MAKE) eval-safety-case-16
 	$(MAKE) eval-safety-case-17
 
+eval-safety-set: ## 執行整合的 safety 回歸 eval (insurance_safety.evalset.json)
+	$(MAKE) eval EVALSET=$(EVAL_DIR)/insurance_safety.evalset.json
+
 eval-safety-case-09: ## 執行 safety case 09 eval
 	$(ADK) eval app $(EVAL_DIR)/safety/case_09_system_capability.evalset.json --config_file_path $(EVAL_CONFIG)
 
