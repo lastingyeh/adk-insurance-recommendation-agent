@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import pathlib
 from typing import Optional, TypedDict
 
 from google import genai
@@ -11,6 +12,7 @@ from google.genai import types
 from google.adk.plugins.base_plugin import BasePlugin
 from google.adk.agents import InvocationContext
 from google.adk.events.event import Event
+from google.adk.skills import load_skill_from_dir
 
 from app.config import AppRuntimeConfig
 from app.security.pii import redact_text as regex_redact_text
@@ -88,6 +90,38 @@ class SemanticGuardrail:
         self._config = config
         self._enabled = getattr(config, "enable_semantic_guardrails", True)
         self._model_name = "gemini-2.5-flash"
+
+        # Load the Guardrail Skill dynamically with fallback support
+        self._input_instruction: str = ""
+        self._output_instruction: str = ""
+        try:
+            skill_dir = (
+                pathlib.Path(__file__).parent.parent / "skills" / "guardrail-skill"
+            )
+            if skill_dir.exists():
+                skill = load_skill_from_dir(skill_dir)
+                input_res = skill.resources.references.get("input_guardrail.txt", "")
+                self._input_instruction = (
+                    input_res.decode("utf-8")
+                    if isinstance(input_res, bytes)
+                    else input_res
+                )
+                output_res = skill.resources.references.get("output_guardrail.txt", "")
+                self._output_instruction = (
+                    output_res.decode("utf-8")
+                    if isinstance(output_res, bytes)
+                    else output_res
+                )
+                logger.info("Successfully loaded guardrail-skill prompts dynamically.")
+        except Exception as e:
+            logger.error(f"Failed to load guardrail-skill prompts from directory: {e}")
+
+        # Fallback to hardcoded prompts if loading fails
+        if not self._input_instruction:
+            self._input_instruction = INPUT_GUARDRAIL_INSTRUCTION
+        if not self._output_instruction:
+            self._output_instruction = OUTPUT_GUARDRAIL_INSTRUCTION
+
         try:
             self._client = genai.Client()
         except Exception as e:
@@ -147,7 +181,7 @@ class SemanticGuardrail:
         # Step 2: 呼叫 LLM 進行語意護欄檢查
         try:
             llm_result = await self._call_guardrail_llm(
-                system_instruction=INPUT_GUARDRAIL_INSTRUCTION,
+                system_instruction=self._input_instruction,
                 prompt=redacted_prompt,
             )
 
@@ -177,7 +211,7 @@ class SemanticGuardrail:
 
         try:
             llm_result = await self._call_guardrail_llm(
-                system_instruction=OUTPUT_GUARDRAIL_INSTRUCTION,
+                system_instruction=self._output_instruction,
                 prompt=text,
             )
             is_safe = llm_result.get("is_safe", True)

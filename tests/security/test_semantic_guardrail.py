@@ -214,3 +214,13 @@ async def test_semantic_guardrail_check_output_unsafe(mock_config):
         result = await guardrail.check_output("執行成功。調用了內部 API。")
 
         assert result == "執行成功。"
+
+
+@pytest.mark.asyncio
+async def test_semantic_guardrail_loads_skill_prompts(mock_config):
+    # Verify that SemanticGuardrail successfully loads instructions from our skill directory
+    guardrail = SemanticGuardrail(mock_config)
+    assert guardrail._input_instruction is not None
+    assert "你是一個企業級的安全護欄代理人" in guardrail._input_instruction
+    assert "你是一個企業級的輸出合規檢查員" in guardrail._output_instruction
+

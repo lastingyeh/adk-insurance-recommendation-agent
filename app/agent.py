@@ -10,6 +10,8 @@ from google.adk.plugins.base_plugin import BasePlugin
 from google.adk.plugins.bigquery_agent_analytics_plugin import (
     BigQueryAgentAnalyticsPlugin,
 )
+from google.adk.skills import load_skill_from_dir
+from google.adk.tools.skill_toolset import SkillToolset
 from google.genai import types
 from toolbox_core.protocol import Protocol
 
@@ -27,7 +29,7 @@ PROMPT_PATH = Path(__file__).resolve().parent / "prompts" / "insurance_agent_pro
 
 def load_agent_prompt() -> str:
     """
-    從檔案中讀取保險代理人的系統提示詞 (System Prompt)。
+    載入主代理人的核心系統提示詞。
     """
     return PROMPT_PATH.read_text(encoding="utf-8")
 
@@ -57,15 +59,30 @@ class AgentFactory:
     def build_tools(self) -> list[Any]:
         """
         建構代理人可使用的工具列表。
-        包含本地 Session 處理工具與遠端 Toolbox 工具。
+        包含本地 Session 處理工具、遠端 Toolbox 工具與動態加載的原生 ADK SkillToolset。
         """
-        return [
+        tools: list[Any] = [
             get_user_profile_snapshot,  # 獲取使用者個人資料快照
             save_user_profile,  # 儲存/更新使用者個人資料
             save_last_recommendation,  # 儲存最後一次的推薦結果
             clear_last_recommendation,  # 清除最後一次的推薦紀錄
             self.create_toolbox(),  # 遠端工具集 (提供保險知識庫與 FAQ 檢索等)
         ]
+
+        # 載入原生 ADK SkillToolset，提供 LLM 原生動態 Skill 加載與漸進式揭露的能力
+        try:
+            skill_dir = (
+                Path(__file__).resolve().parent / "skills" / "insurance-agent-skill"
+            )
+            if skill_dir.exists():
+                insurance_skill = load_skill_from_dir(skill_dir)
+                skill_toolset = SkillToolset(skills=[insurance_skill])
+                tools.append(skill_toolset)
+        except Exception:
+            # 靜默降級，確保基本工具鏈與 Session 工具依然正常運作
+            pass
+
+        return tools
 
     def create(self, model_name: str | None = None) -> Agent:
         """
@@ -112,6 +129,7 @@ if runtime_config.bigquery_analytics_dataset and runtime_config.google_cloud_pro
 # 載入語意安全護欄插件 (SemanticGuardrailPlugin) 到全域 App 中
 if runtime_config.enable_semantic_guardrails:
     from app.security.semantic_guardrail import SemanticGuardrailPlugin
+
     plugins.append(SemanticGuardrailPlugin(runtime_config))
 
 app = App(root_agent=root_agent, name="app", plugins=plugins)

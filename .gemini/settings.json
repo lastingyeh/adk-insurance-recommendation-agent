@@ -3,5 +3,8 @@
     "graphify-http": {
       "url": "http://localhost:9000/mcp"
     }
+  },
+  "ui": {
+    "inlineThinkingMode": "off"
   }
 }

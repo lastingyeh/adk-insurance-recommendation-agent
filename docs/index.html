@@ -2248,7 +2248,7 @@ make ui-dev       # 啟動 Next.js 網頁 (Port 3000)</code></pre>
                   <li>
                     <strong>ADK Streamlit Playground</strong>：
                     <p>
-                      執行 <a class="gh-src" href="blob/main/Makefile#L603" target="_blank" rel="noopener"><code>make playground</code></a> 啟動 ADK 內建的 Web
+                      執行 <a class="gh-src" href="blob/main/Makefile#L609" target="_blank" rel="noopener"><code>make playground</code></a> 啟動 ADK 內建的 Web
                       互動沙盒，用最直覺的 GUI 即時驗證 Agent 的工具呼叫、Prompt
                       約束以及模型生成結果。
                     </p>
@@ -7766,25 +7766,25 @@ redacted, findings = redact_text(input_text) # 將 ID 轉為 [REDACTED_TW_ID]</c
           </p>
           <ol>
             <li>
-              <strong>核心對話 (Core Evals)</strong>：<a class="gh-src" href="blob/main/Makefile#L444" target="_blank" rel="noopener"><code>make eval-core</code></a>
+              <strong>核心對話 (Core Evals)</strong>：<a class="gh-src" href="blob/main/Makefile#L447" target="_blank" rel="noopener"><code>make eval-core</code></a>
               (驗證基本保單搜尋、推薦關聯與完整資訊補全)。
             </li>
             <li>
-              <strong>安全性邊界 (Safety Evals)</strong>：<a class="gh-src" href="blob/main/Makefile#L473" target="_blank" rel="noopener"><code>make eval-safety</code></a>
+              <strong>安全性邊界 (Safety Evals)</strong>：<a class="gh-src" href="blob/main/Makefile#L476" target="_blank" rel="noopener"><code>make eval-safety</code></a>
               (驗證系統抵禦惡意 Prompt Injection 的能力，並確保 PII 不被 echo
               回應給用戶)。
             </li>
             <li>
-              <strong>即時互動情境 (Live Evals)</strong>：<a class="gh-src" href="blob/main/Makefile#L525" target="_blank" rel="noopener"><code>make eval-live</code></a>
+              <strong>即時互動情境 (Live Evals)</strong>：<a class="gh-src" href="blob/main/Makefile#L531" target="_blank" rel="noopener"><code>make eval-live</code></a>
               (針對 Live 模式下的情感共鳴 (Affective Empathy) 與主動建議評分)。
             </li>
             <li>
-              <strong>會話歷史記憶 (Session Aware)</strong>：<a class="gh-src" href="blob/main/Makefile#L511" target="_blank" rel="noopener"><code>make eval-session-aware</code></a>
+              <strong>會話歷史記憶 (Session Aware)</strong>：<a class="gh-src" href="blob/main/Makefile#L517" target="_blank" rel="noopener"><code>make eval-session-aware</code></a>
               (檢核 Agent 是否能記住上個回合的使用者偏好或歷史推薦)。
             </li>
             <li>
               <strong>全域指標評估 (All-in-One)</strong>：執行
-              <a class="gh-src" href="blob/main/Makefile#L583" target="_blank" rel="noopener"><code>make eval-all</code></a>。遍歷所有 evalsets
+              <a class="gh-src" href="blob/main/Makefile#L589" target="_blank" rel="noopener"><code>make eval-all</code></a>。遍歷所有 evalsets
               並產出視覺化報告，評分準則涵蓋
               <code>Instruction Following</code>、<code
                 >Tool Selection Accuracy</code
@@ -7903,7 +7903,7 @@ ORDER BY avg_latency_ms DESC;</code></pre>
             <strong>OBSERVABILITY GRACEFUL DEGRADATION:</strong>
             <p>
               可觀測性架構具備<b>優雅降級</b>特性。在本地執行
-              <a class="gh-src" href="blob/main/Makefile#L603" target="_blank" rel="noopener"><code>make playground</code></a>時，若偵測到無 GCP 環境，OTel
+              <a class="gh-src" href="blob/main/Makefile#L609" target="_blank" rel="noopener"><code>make playground</code></a>時，若偵測到無 GCP 環境，OTel
               自動切換至 No-Op 模式，不拖累本地開發效能；BigQuery
               插件若未配置環境變數則自動跳過初始化。
             </p>
@@ -8031,10 +8031,10 @@ make tf-apply</code></pre>
                       >
                       <ul>
                         <li>
-                          如果你想一鍵初始化並套用 Terraform，可執行：<a class="gh-src" href="blob/main/Makefile#L327" target="_blank" rel="noopener"><code>make tf-apply</code></a>
+                          如果你想一鍵初始化並套用 Terraform，可執行：<a class="gh-src" href="blob/main/Makefile#L330" target="_blank" rel="noopener"><code>make tf-apply</code></a>
                         </li>
                         <li>
-                          如果你想自動一鍵打包映像檔、推送並 Apply 部署，可執行：<a class="gh-src" href="blob/main/Makefile#L429" target="_blank" rel="noopener"><code>make gcp-deploy</code></a>
+                          如果你想自動一鍵打包映像檔、推送並 Apply 部署，可執行：<a class="gh-src" href="blob/main/Makefile#L432" target="_blank" rel="noopener"><code>make gcp-deploy</code></a>
                         </li>
                       </ul>
                     </div>
@@ -8332,7 +8332,7 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
                   <strong>方式 B（檢視部署輸出日誌）</strong>：
                   <p>
                     回顧您執行
-                    <a class="gh-src" href="blob/main/Makefile#L327" target="_blank" rel="noopener"><code>make tf-apply</code></a> 結束時，終端機會列印出
+                    <a class="gh-src" href="blob/main/Makefile#L330" target="_blank" rel="noopener"><code>make tf-apply</code></a> 結束時，終端機會列印出
                     <code>db_initialization_instructions</code>
                     區塊，其中已包含該前端網址與測試帳密資訊。
                   </p>
@@ -8461,7 +8461,7 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
               若您在存取前端網址時遇到連線問題或載入緩慢，請參閱下方的<b
                 >「七、 開發沙盒故障排除問答」</b
               >。此外，當您結束沙盒環境測試時，切記執行
-              <a class="gh-src" href="blob/main/Makefile#L336" target="_blank" rel="noopener"><code>make tf-destroy</code></a> 來釋放 GCP
+              <a class="gh-src" href="blob/main/Makefile#L339" target="_blank" rel="noopener"><code>make tf-destroy</code></a> 來釋放 GCP
               資源，避免產生不必要的雲端帳單費用。
             </p>
           </div>
@@ -9556,7 +9556,7 @@ make gcp-db-proxy    # 手動在本地背景拉起 5432 對應雲端 SQL 的安�
                     </div>
                     <p>
                       <em>自動修復機制：</em>本專案的
-                      <a class="gh-src" href="blob/main/Makefile#L336" target="_blank" rel="noopener"><code>make tf-destroy</code></a> 指令已內建 PostgreSQL 使用者 (Role)
+                      <a class="gh-src" href="blob/main/Makefile#L339" target="_blank" rel="noopener"><code>make tf-destroy</code></a> 指令已內建 PostgreSQL 使用者 (Role)
                       移除的自動修復邏輯。它會先在背景執行
                       <code>terraform state rm</code>
                       將可能具有依賴關聯的資料庫使用者從 Terraform State
@@ -9686,7 +9686,7 @@ make gcp-db-setup</code></pre>
                 </li>
                 <li>
                   匯入成功後，重新執行
-                  <a class="gh-src" href="blob/main/Makefile#L327" target="_blank" rel="noopener"><code>make tf-apply</code></a> 即可恢復正常狀態同步。
+                  <a class="gh-src" href="blob/main/Makefile#L330" target="_blank" rel="noopener"><code>make tf-apply</code></a> 即可恢復正常狀態同步。
                 </li>
               </ol>
             </div>
@@ -9710,7 +9710,7 @@ make gcp-db-setup</code></pre>
                 <strong>【解決方案】</strong><br />
                 <strong
                   >本專案的
-                  <a class="gh-src" href="blob/main/Makefile#L336" target="_blank" rel="noopener"><code>make tf-destroy</code></a> 指令已內建自動修復邏輯。</strong
+                  <a class="gh-src" href="blob/main/Makefile#L339" target="_blank" rel="noopener"><code>make tf-destroy</code></a> 指令已內建自動修復邏輯。</strong
                 >
                 它會先執行
                 <code>terraform state rm</code> 將該使用者從狀態中移除，讓
@@ -9756,7 +9756,7 @@ make gcp-db-setup</code></pre>
               <p>
                 <strong>【問題原因】</strong><br />
                 這通常是 Docker 啟動掛載路徑錯誤。在
-                <a class="gh-src" href="blob/main/Makefile#L362" target="_blank" rel="noopener"><code>make gcp-db-setup</code></a> 流程中，指令會嘗試將本機的 Google
+                <a class="gh-src" href="blob/main/Makefile#L365" target="_blank" rel="noopener"><code>make gcp-db-setup</code></a> 流程中，指令會嘗試將本機的 Google
                 Cloud 認證（ADC）掛載到
                 <code>cloud-sql-proxy</code>
                 容器中。如果本機找不到憑證檔案，或是
@@ -9822,7 +9822,7 @@ chmod 644 /tmp/adc_db_setup.json</code></pre>
                   <pre><code class="language-bash">cd deployment/terraform/dev
 terraform untaint module.agent_infrastructure.google_logging_project_bucket_config.genai_telemetry_bucket</code></pre>
                 </li>
-                <li>重新執行 <a class="gh-src" href="blob/main/Makefile#L327" target="_blank" rel="noopener"><code>make tf-apply</code></a> 恢復正常同步。</li>
+                <li>重新執行 <a class="gh-src" href="blob/main/Makefile#L330" target="_blank" rel="noopener"><code>make tf-apply</code></a> 恢復正常同步。</li>
               </ol>
             </div>
           </details>
@@ -12049,7 +12049,7 @@ terraform untaint module.agent_infrastructure.google_logging_project_bucket_conf
                       ERROR):</strong
                     >
                     <p>
-                      若在執行 <a class="gh-src" href="blob/main/Makefile#L283" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> 期間，Terraform
+                      若在執行 <a class="gh-src" href="blob/main/Makefile#L286" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> 期間，Terraform
                       拋出如下錯誤：<br />
                       <code
                         >Error: Error waiting to create Repository: Error
@@ -12075,7 +12075,7 @@ terraform untaint module.agent_infrastructure.google_logging_project_bucket_conf
                       <strong>Only select repositories</strong> 中搜尋並新增
                       <code>adk-insurance-recommendation-agent</code
                       >（或您實際的儲存庫名稱）並儲存。儲存完畢後，重新執行
-                      <a class="gh-src" href="blob/main/Makefile#L283" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> 即可順利通過。
+                      <a class="gh-src" href="blob/main/Makefile#L286" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> 即可順利通過。
                     </p>
                   </div>
                 </li>
@@ -12157,7 +12157,7 @@ make tf-apply</code></pre>
             <p>
               如果在學習、測試或重複部署過程中操作不當（如未同步狀態檔），導致
               GCP 上產生了多個名稱類似的孤兒（Orphaned）Cloud SQL 實體，可以使用
-              <a class="gh-src" href="blob/main/Makefile#L419" target="_blank" rel="noopener"><code>make gcp-cleanup-orphans</code></a>
+              <a class="gh-src" href="blob/main/Makefile#L422" target="_blank" rel="noopener"><code>make gcp-cleanup-orphans</code></a>
               輔助列出並一鍵清除多餘資源，避免產生額外雲端帳單費用。
             </p>
           </div>
@@ -12185,7 +12185,7 @@ make tf-apply</code></pre>
                 映像檔（以 Commit SHA 為標記）、推送到 Artifact Registry、更新
                 Staging 環境基礎架構、最後<strong
                   >自動執行部署後評估 (ADK Eval -
-                  <a class="gh-src" href="blob/main/Makefile#L583" target="_blank" rel="noopener"><code>make eval-all</code></a>)</strong
+                  <a class="gh-src" href="blob/main/Makefile#L589" target="_blank" rel="noopener"><code>make eval-all</code></a>)</strong
                 >。若 AI 評估指標（如 PII
                 合規、推薦正確度）未達標準，管線將自動中斷。
               </p>
@@ -12226,7 +12226,7 @@ make tf-apply</code></pre>
                 <strong>Cloud Run Job</strong>
                 (<code>db-migration</code>)。當資料庫 Schema
                 有變更時，您可以直接透過 GCP Web Console 手動執行此 Job，或利用
-                <a class="gh-src" href="blob/main/Makefile#L362" target="_blank" rel="noopener"><code>make gcp-db-setup</code></a> 指令同步雲端資料庫結構。
+                <a class="gh-src" href="blob/main/Makefile#L365" target="_blank" rel="noopener"><code>make gcp-db-setup</code></a> 指令同步雲端資料庫結構。
               </p>
             </li>
             <li>
@@ -12279,7 +12279,7 @@ make tf-destroy ENV_NAME=prod    # 銷毀 Production 環境資源 (請極度謹�
                       執行此命令會永久刪除 OIDC 授權憑證、GitHub App
                       安全連接以及所有的 Cloud Build
                       構建觸發器。未來若要重新啟用，必須重新執行
-                      <a class="gh-src" href="blob/main/Makefile#L283" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> 流程。
+                      <a class="gh-src" href="blob/main/Makefile#L286" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> 流程。
                     </p>
                   </div>
                 </li>
@@ -12302,12 +12302,12 @@ make tf-destroy ENV_NAME=prod    # 銷毀 Production 環境資源 (請極度謹�
             </li>
             <li>
               ✅ <strong>CI/CD 觸發器</strong>：已執行
-              <a class="gh-src" href="blob/main/Makefile#L283" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> (或手動腳本) 順利建立 CI/CD
+              <a class="gh-src" href="blob/main/Makefile#L286" target="_blank" rel="noopener"><code>make tf-bootstrap</code></a> (或手動腳本) 順利建立 CI/CD
               觸發器與 GitHub 連線。
             </li>
             <li>
               ✅ <strong>本地測試與評估</strong>：在本地已通過
-              <a class="gh-src" href="blob/main/Makefile#L616" target="_blank" rel="noopener"><code>make test</code></a> 與 <a class="gh-src" href="blob/main/Makefile#L575" target="_blank" rel="noopener"><code>make eval</code></a>，確認 AI
+              <a class="gh-src" href="blob/main/Makefile#L622" target="_blank" rel="noopener"><code>make test</code></a> 與 <a class="gh-src" href="blob/main/Makefile#L581" target="_blank" rel="noopener"><code>make eval</code></a>，確認 AI
               指標符合標準。
             </li>
           </ul>
@@ -12855,34 +12855,34 @@ make tf-destroy ENV_NAME=prod    # 銷毀 Production 環境資源 (請極度謹�
         //   把 make/target 變成 span，開頭為純文字節點，故可安全包覆）
         const GH_BASE = GH_REPO + '/blob/main/';
         const MAKE_LINKS = {
-          "_kill-adk-port":"Makefile#L249", "_kill-fastapi-port":"Makefile#L252", "_kill-port":"Makefile#L258",
-          "_kill-ui-port":"Makefile#L255", "backend":"Makefile#L561", "build-push":"Makefile#L101",
-          "check":"Makefile#L269", "clean":"Makefile#L550", "clean-all":"Makefile#L555",
+          "_kill-adk-port":"Makefile#L250", "_kill-fastapi-port":"Makefile#L253", "_kill-port":"Makefile#L258",
+          "_kill-ui-port":"Makefile#L256", "backend":"Makefile#L567", "build-push":"Makefile#L101",
+          "check":"Makefile#L272", "clean":"Makefile#L556", "clean-all":"Makefile#L561",
           "db-clean":"Makefile#L161", "db-ingest":"scripts/ingest_faq_embeddings.py", "db-init":"Makefile#L147",
           "db-reset":"Makefile#L165", "db-seed":"scripts/seed_user.py", "db-setup":"Makefile#L158",
-          "db-up":"docker-compose.yml", "debug-fastapi":".vscode/launch.json", "deploy":"Makefile#L563",
+          "db-up":"docker-compose.yml", "debug-fastapi":".vscode/launch.json", "deploy":"Makefile#L569",
           "down":"docker-compose.yml", "env-check":"Makefile#L138", "env-check-gcp":"Makefile#L112",
-          "eval":"Makefile#L575", "eval-all":"Makefile#L583", "eval-core":"Makefile#L444",
-          "eval-core-case-1":"Makefile#L450", "eval-core-case-2":"Makefile#L453", "eval-core-case-3":"Makefile#L456",
-          "eval-extended":"Makefile#L459", "eval-extended-case-4":"Makefile#L464", "eval-extended-case-5":"Makefile#L467",
-          "eval-extended-case-6":"Makefile#L470", "eval-live":"Makefile#L525", "eval-live-case-1":"Makefile#L532",
-          "eval-live-case-2":"Makefile#L538", "eval-live-case-3":"Makefile#L541", "eval-live-case-4":"Makefile#L544",
-          "eval-live-dynamic":"Makefile#L535", "eval-safety":"Makefile#L473", "eval-safety-case-09":"Makefile#L484",
-          "eval-safety-case-10":"Makefile#L487", "eval-safety-case-11":"Makefile#L490", "eval-safety-case-12":"Makefile#L493",
-          "eval-safety-case-13":"Makefile#L496", "eval-safety-case-14":"Makefile#L499", "eval-safety-case-15":"Makefile#L502",
-          "eval-safety-case-16":"Makefile#L505", "eval-safety-case-17":"Makefile#L508", "eval-session-aware":"Makefile#L511",
-          "eval-session-aware-case-s1":"Makefile#L516", "eval-session-aware-case-s2":"Makefile#L519", "eval-session-aware-case-s3":"Makefile#L522",
-          "gcp-bootstrap":"Makefile#L411", "gcp-cleanup-orphans":"Makefile#L419", "gcp-db-init-info":"Makefile#L359",
-          "gcp-db-proxy":"Makefile#L350", "gcp-db-setup":"Makefile#L362", "gcp-deploy":"Makefile#L429",
-          "gcp-rollback":"Makefile#L437", "gcp-traffic-list":"Makefile#L432", "help":"Makefile#L31",
-          "install":"Makefile#L124", "install-all":"Makefile#L128", "lint":"Makefile#L596",
-          "logs":"docker-compose.yml", "playground":"Makefile#L603", "register-gemini-enterprise":"Makefile#L613",
+          "eval":"Makefile#L581", "eval-all":"Makefile#L589", "eval-core":"Makefile#L447",
+          "eval-core-case-1":"Makefile#L453", "eval-core-case-2":"Makefile#L456", "eval-core-case-3":"Makefile#L459",
+          "eval-extended":"Makefile#L462", "eval-extended-case-4":"Makefile#L467", "eval-extended-case-5":"Makefile#L470",
+          "eval-extended-case-6":"Makefile#L473", "eval-live":"Makefile#L531", "eval-live-case-1":"Makefile#L538",
+          "eval-live-case-2":"Makefile#L544", "eval-live-case-3":"Makefile#L547", "eval-live-case-4":"Makefile#L550",
+          "eval-live-dynamic":"Makefile#L541", "eval-safety":"Makefile#L476", "eval-safety-case-09":"Makefile#L490",
+          "eval-safety-case-10":"Makefile#L493", "eval-safety-case-11":"Makefile#L496", "eval-safety-case-12":"Makefile#L499",
+          "eval-safety-case-13":"Makefile#L502", "eval-safety-case-14":"Makefile#L505", "eval-safety-case-15":"Makefile#L508",
+          "eval-safety-case-16":"Makefile#L511", "eval-safety-case-17":"Makefile#L514", "eval-session-aware":"Makefile#L517",
+          "eval-session-aware-case-s1":"Makefile#L522", "eval-session-aware-case-s2":"Makefile#L525", "eval-session-aware-case-s3":"Makefile#L528",
+          "gcp-bootstrap":"Makefile#L414", "gcp-cleanup-orphans":"Makefile#L422", "gcp-db-init-info":"Makefile#L362",
+          "gcp-db-proxy":"Makefile#L353", "gcp-db-setup":"Makefile#L365", "gcp-deploy":"Makefile#L432",
+          "gcp-rollback":"Makefile#L440", "gcp-traffic-list":"Makefile#L435", "help":"Makefile#L31",
+          "install":"Makefile#L124", "install-all":"Makefile#L128", "lint":"Makefile#L602",
+          "logs":"docker-compose.yml", "playground":"Makefile#L609", "register-gemini-enterprise":"Makefile#L619",
           "run-api":"Makefile#L202", "run-cli":"Makefile#L237", "run-fastapi":"app/api/main.py",
           "run-web":"Makefile#L193", "sync":"Makefile#L132", "sync-all":"Makefile#L135",
-          "test":"Makefile#L616", "test-api":"Makefile#L272", "test-audit":"Makefile#L278",
-          "test-security":"Makefile#L275", "tf-apply":"Makefile#L327", "tf-bootstrap":"Makefile#L283",
-          "tf-bootstrap-destroy":"Makefile#L302", "tf-db-password":"Makefile#L347", "tf-destroy":"Makefile#L336",
-          "tf-gen-config":"Makefile#L83", "tf-init":"Makefile#L315", "tf-plan":"Makefile#L318",
+          "test":"Makefile#L622", "test-api":"Makefile#L275", "test-audit":"Makefile#L281",
+          "test-security":"Makefile#L278", "tf-apply":"Makefile#L330", "tf-bootstrap":"Makefile#L286",
+          "tf-bootstrap-destroy":"Makefile#L305", "tf-db-password":"Makefile#L350", "tf-destroy":"Makefile#L339",
+          "tf-gen-config":"Makefile#L83", "tf-init":"Makefile#L318", "tf-plan":"Makefile#L321",
           "toolbox-logs":"Makefile#L188", "ui-build":"Makefile#L246", "ui-dev":"Makefile#L243",
           "ui-install":"Makefile#L240", "up":"docker-compose.yml", "up-build":"docker-compose.yml",
         };

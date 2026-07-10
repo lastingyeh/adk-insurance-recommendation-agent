@@ -1,14 +1,9 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import os
-from typing import Optional
 
-from google.adk.agents import InvocationContext
-from google.adk.events.event import Event
-from google.genai import types
 
 from app.config import AppRuntimeConfig
 from app.security.semantic_guardrail import (
@@ -33,7 +28,9 @@ class LocalSemanticGuardrail(SemanticGuardrail):
 
         # 讀取地端模型專屬配置（提供合理的預設值）
         # 模型格式範例: "ollama_chat/gemma3:latest" 或 "openai/mistral-small3.1"
-        self._local_model_name = os.getenv("GUARDRAIL_MODEL", "ollama_chat/gemma3:latest")
+        self._local_model_name = os.getenv(
+            "GUARDRAIL_MODEL", "ollama_chat/gemma3:latest"
+        )
         # 地端 API 基底網址，例如 Ollama 預設為 http://localhost:11434
         self._api_base = os.getenv("GUARDRAIL_API_BASE", "http://localhost:11434")
         self._api_key = os.getenv("GUARDRAIL_API_KEY", "ollama")
@@ -41,7 +38,7 @@ class LocalSemanticGuardrail(SemanticGuardrail):
     async def _call_guardrail_llm(self, system_instruction: str, prompt: str) -> dict:
         """覆寫父類別的 LLM 呼叫方法，改為調用地端模型或 LiteLLM 完成語意審查。"""
         # 延遲匯入 litellm 以免在不需地端模型時引入額外依賴
-        import litellm
+        import litellm  # type: ignore
 
         # 設定 OLLAMA_API_BASE 或其他 LiteLLM 需要的環境變數
         if "ollama" in self._local_model_name:
