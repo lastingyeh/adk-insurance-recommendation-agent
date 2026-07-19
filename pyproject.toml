@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Insurance recommendation agent using Google ADK"
 requires-python = ">=3.12"
 dependencies = [
-  "google-adk>=1.31.1",
+  "google-adk[a2a]>=1.31.1",
   "google-genai>=1.73.1",
   "fastapi>=0.136.0",
   "uvicorn>=0.44.0",
