@@ -12,8 +12,10 @@ if __name__ == "__main__":
     parsed_url = urlparse(runtime_config.underwriting_service_url)
     port = parsed_url.port or 8001
 
-    print(f"啟動核保 A2A 代理人伺服器，監聽網址: {runtime_config.underwriting_service_url}")
-    print(f"正在廣播 A2A 代理人資訊...")
+    print(
+        f"啟動核保 A2A 代理人伺服器，監聽網址: {runtime_config.underwriting_service_url}"
+    )
+    print("正在廣播 A2A 代理人資訊...")
 
     # 啟動外部核保 Agent 服務 (A2A 協定)
     to_a2a(underwriting_agent, port=port)

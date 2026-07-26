@@ -9,6 +9,7 @@ from google.adk.tools.tool_context import ToolContext
 這些工具讓核保代理人（Underwriting Agent）能夠在對話過程中送出投保申請案並獲得核保評估結果。
 """
 
+
 def submit_application(
     product_name: str,
     age: int,
@@ -38,15 +39,38 @@ def submit_application(
 
     # 高風險職業清單
     high_risk_occupations = [
-        "消防員", "消防", "警察", "特技", "高空", "礦工", "軍人", "潛水",
-        "firefighter", "police", "military", "miner", "stuntman", "diver"
+        "消防員",
+        "消防",
+        "警察",
+        "特技",
+        "高空",
+        "礦工",
+        "軍人",
+        "潛水",
+        "firefighter",
+        "police",
+        "military",
+        "miner",
+        "stuntman",
+        "diver",
     ]
     is_high_risk_job = any(job in occupation_lower for job in high_risk_occupations)
 
     # 嚴重病史關鍵字
     critical_illnesses = [
-        "癌症", "心臟", "中風", "糖尿病", "高血壓", "洗腎", "慢性",
-        "cancer", "heart", "stroke", "diabetes", "hypertension", "chronic"
+        "癌症",
+        "心臟",
+        "中風",
+        "糖尿病",
+        "高血壓",
+        "洗腎",
+        "慢性",
+        "cancer",
+        "heart",
+        "stroke",
+        "diabetes",
+        "hypertension",
+        "chronic",
     ]
     has_critical_illness = any(ill in health_lower for ill in critical_illnesses)
 

@@ -4,7 +4,10 @@ from pathlib import Path
 from typing import Any
 
 from google.adk.agents import Agent
-from google.adk.agents.remote_a2a_agent import RemoteA2aAgent, AGENT_CARD_WELL_KNOWN_PATH
+from google.adk.agents.remote_a2a_agent import (
+    RemoteA2aAgent,
+    AGENT_CARD_WELL_KNOWN_PATH,
+)
 from google.adk.apps import App
 from google.adk.tools.toolbox_toolset import ToolboxToolset
 from google.adk.plugins.base_plugin import BasePlugin
@@ -69,7 +72,7 @@ class AgentFactory:
         """
         建立專職保險推薦與商品選配的 RecommendationAgent。
         """
-        tools = [
+        tools: list[Any] = [
             save_last_recommendation,
             clear_last_recommendation,
             self.create_toolbox(),
@@ -143,7 +146,7 @@ class AgentFactory:
             agent_card=f"{self._config.underwriting_service_url.rstrip('/')}{AGENT_CARD_WELL_KNOWN_PATH}",
         )
 
-        supervisor_tools = [
+        supervisor_tools: list[Any] = [
             get_user_profile_snapshot,
             save_user_profile,
             AgentTool(agent=rec_agent),
@@ -160,6 +163,7 @@ class AgentFactory:
             generate_content_config=types.GenerateContentConfig(
                 max_output_tokens=self._config.max_output_tokens,
             ),
+            
         )
 
 

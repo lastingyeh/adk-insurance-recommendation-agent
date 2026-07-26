@@ -142,7 +142,9 @@ def load_runtime_config() -> AppRuntimeConfig:
         bigquery_analytics_dataset=os.getenv("BQ_ANALYTICS_DATASET"),
         bigquery_location=os.getenv("BQ_LOCATION", "US"),
         google_cloud_project=os.getenv("GOOGLE_CLOUD_PROJECT"),
-        underwriting_service_url=os.getenv("UNDERWRITING_SERVICE_URL", "http://127.0.0.1:8001"),
+        underwriting_service_url=os.getenv(
+            "UNDERWRITING_SERVICE_URL", "http://127.0.0.1:8001"
+        ),
     )
 
 
