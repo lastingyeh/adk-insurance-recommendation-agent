@@ -12,6 +12,8 @@ from app.services.agent_run_service import AgentRunService
 from app.api.schemas import UserInDB
 import uuid
 from app.services.audit_log_service import AuditContext
+from app.api.sse_adapter import SSEEnvelopeAdapter
+from app.security.semantic_guardrail import PromptInjectionException
 
 """
 app/api/routes/run.py
@@ -119,19 +121,76 @@ async def run_agent(
     async def sse_generator() -> AsyncGenerator[str, None]:
         """
         生成 SSE 格式的流式輸出。
-        將 AgentRunService 產生的 JSON Envelope 轉換為 SSE 字串格式。
+        將 AgentRunService 產生的原始 Event 事件利用 SSEEnvelopeAdapter 轉換為 JSON SSE 封包字串。
         """
-        async for envelope in run_service.stream(
-            prompt=prompt,
-            session_id=session_id,
-            session_state=payload.sessionState,
-            user_id=payload.userId,
-            image=payload.image,
-            image_type=payload.imageType,
-            audit_context=audit_context,
-            accumulate_only=not payload.stream,
-        ):
-            yield encode_sse_event(envelope)
+        adapter = SSEEnvelopeAdapter(prompt=prompt, initial_state=payload.sessionState)
+
+        # 1. 首先發送 meta 資訊
+        yield encode_sse_event(adapter.build_meta_envelope())
+
+        total_text = ""
+        accumulate_only = not payload.stream
+
+        try:
+            async for event in run_service.stream(
+                prompt=prompt,
+                session_id=session_id,
+                session_state=payload.sessionState,
+                user_id=payload.userId,
+                image=payload.image,
+                image_type=payload.imageType,
+                audit_context=audit_context,
+            ):
+                # 2. 轉換為前端所需的 SSE 封包
+                envelopes = adapter.map_adk_event_to_envelopes(event)
+
+                for envelope in envelopes:
+                    if envelope.get("type") == "message":
+                        text = str(envelope.get("text", ""))
+                        mode = envelope.get("mode")
+
+                        if mode == "append":
+                            adapter.step_text += text
+                        else:
+                            adapter.step_text = text
+
+                        if not accumulate_only:
+                            yield encode_sse_event(envelope)
+                    else:
+                        yield encode_sse_event(envelope)
+
+                # 累積文字片段，用於最後 completion Done 封包
+                if not event.partial and adapter.step_text:
+                    if total_text and not total_text.endswith("\n"):
+                        total_text += "\n\n"
+                    total_text += adapter.step_text
+                    adapter.step_text = ""
+
+            # 確保最後生成回合結束時合併其餘片段
+            if adapter.step_text:
+                if total_text and not total_text.endswith("\n"):
+                    total_text += "\n\n"
+                total_text += adapter.step_text
+
+            # 從資料庫獲取最終同步後的狀態
+            final_state = await get_container(request).sessions.get_state(
+                session_id=session_id,
+                fallback_state=adapter.merged_state,
+                user_id=payload.userId,
+            )
+
+            # 3. 發送 Done 封包，完成 SSE 串流
+            yield encode_sse_event(adapter.build_done_envelope(total_text, final_state))
+
+        except PromptInjectionException as p_exc:
+            yield encode_sse_event(
+                adapter.build_error_envelope(
+                    "[SECURITY_VIOLATION] 偵測到異常輸入指令，對話已安全中止。",
+                    error_code="SECURITY_VIOLATION",
+                )
+            )
+        except Exception as exc:
+            yield encode_sse_event(adapter.build_error_envelope(str(exc)))
 
     # 回傳流式回應，設定正確的媒體類型 (text/event-stream) 與標頭以支援 SSE
     return StreamingResponse(
