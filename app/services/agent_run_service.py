@@ -10,6 +10,7 @@ import base64
 from collections.abc import AsyncGenerator
 from datetime import datetime
 
+from google.adk.agents.run_config import RunConfig, StreamingMode
 from google.adk.events.event import Event
 from google.adk.runners import Runner
 from google.genai import types as genai_types
@@ -149,6 +150,7 @@ async def iter_run_events(
         session_id=session_id,
         new_message=build_user_message_content(prompt, image, image_type),
         state_delta=state_delta or None,
+        run_config=RunConfig(streaming_mode=StreamingMode.SSE),
     ):
         yield event
 
@@ -218,7 +220,9 @@ def map_adk_event_to_envelopes(event: Event, sequence: int) -> list[dict[str, ob
         suffix = f"{event_id}-{part_index}"
 
         # 處理模型發起的工具請求
-        if part.function_call and part.function_call.name:
+        # 串流模式 (StreamingMode.SSE) 下，同一個 function_call 會在 partial 與最終事件各出現一次；
+        # 只在非 partial（完整）事件才吐 tool-call，避免前端產生重複且永遠 pending 的進度條目。
+        if part.function_call and part.function_call.name and not event.partial:
             tool_name = part.function_call.name
             is_internal = is_internal_session_tool(tool_name)
 
@@ -393,8 +397,8 @@ class AgentRunService:
             # 使用 sequence * 100 確保同一事件內的複數 part 有獨立且有序的序號
             audit_sequence = sequence * 100 + part_index
 
-            # 記錄工具請求
-            if part.function_call and part.function_call.name:
+            # 記錄工具請求（串流模式下 partial 會帶重複的 function_call，只記非 partial）
+            if part.function_call and part.function_call.name and not event.partial:
                 tool_name = part.function_call.name
                 await self._audit_logs.record(
                     context=audit_context,
@@ -448,8 +452,9 @@ class AgentRunService:
 
             kind = str(event.get("kind", "timeline"))  # type: ignore
 
-            # 工具相關已在 _record_adk_event_audit 記錄過，此處跳過避免重複
-            if kind in {"tool-call", "tool-result"}:
+            # 工具相關已在 _record_adk_event_audit 記錄過；partial 逐字串流不重複審計，
+            # 僅在最終完整回覆 (kind="agent") 記錄一次，避免每個 token 一筆 DB 寫入。
+            if kind in {"tool-call", "tool-result", "stream"}:
                 return
 
             # 對應不同的 event kind 到 audit 的事件類型

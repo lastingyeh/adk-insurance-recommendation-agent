@@ -1,5 +1,5 @@
 import { Dispatch, SetStateAction } from 'react';
-import { TimelineEvent, SessionRecord } from './mock-data';
+import { TimelineEvent, SessionRecord, ChatMessage } from './mock-data';
 
 export type ProxyStreamEnvelope =
   | {
@@ -88,33 +88,39 @@ export async function consumeProxyStream({
   let sawDone = false;
 
   setSessions((currentSessions) =>
-    currentSessions.map((session) => {
-      if (session.id !== sessionId) {
-        return session;
-      }
-
-      const hasPlaceholder = session.messages.some(
-        (message) => message.id === streamMessageId,
-      );
-
-      return {
-        ...session,
-        status: 'pending',
-        messages: hasPlaceholder
-          ? session.messages
-          : [
-              ...session.messages,
-              {
-                id: streamMessageId,
-                role: 'agent',
-                text: '',
-                timestamp: formatClock(),
-                status: 'streaming',
-              },
-            ],
-      };
-    }),
+    currentSessions.map((session) =>
+      session.id === sessionId ? { ...session, status: 'pending' } : session,
+    ),
   );
+
+  const upsertStreamMessage = (
+    messages: ChatMessage[],
+    updater: (prev: ChatMessage | null) => ChatMessage,
+  ): ChatMessage[] => {
+    if (messages.some((message) => message.id === streamMessageId)) {
+      return messages.map((message) =>
+        message.id === streamMessageId ? updater(message) : message,
+      );
+    }
+    return [...messages, updater(null)];
+  };
+
+  const finalizeStreamMessage = (
+    messages: ChatMessage[],
+    finalText: string,
+  ): ChatMessage[] => {
+    const exists = messages.some((message) => message.id === streamMessageId);
+    if (!exists && !finalText) {
+      return messages;
+    }
+    return upsertStreamMessage(messages, (prev) => ({
+      id: streamMessageId,
+      role: 'agent',
+      text: finalText || prev?.text || '',
+      timestamp: formatClock(),
+      status: 'final',
+    }));
+  };
 
   try {
     while (true) {
@@ -198,21 +204,19 @@ export async function consumeProxyStream({
               return {
                 ...session,
                 updatedAt: '剛剛',
-                messages: session.messages.map((message) => {
-                  if (message.id !== streamMessageId) {
-                    return message;
-                  }
-
-                  return {
-                    ...message,
-                    text:
-                      envelope.mode === 'append'
-                        ? `${message.text}${envelope.text}`
-                        : envelope.text,
-                    timestamp: formatClock(),
-                    status: envelope.final ? 'final' : 'streaming',
-                  };
-                }),
+                messages: upsertStreamMessage(session.messages, (prev) => ({
+                  id: streamMessageId,
+                  role: 'agent',
+                  text: !prev
+                    ? envelope.text
+                    : envelope.mode === 'append'
+                      ? `${prev.text}${envelope.text}`
+                      : prev.text.endsWith(envelope.text)
+                        ? prev.text
+                        : `${prev.text}${envelope.text}`,
+                  timestamp: formatClock(),
+                  status: 'streaming',
+                })),
               };
             }),
           );
@@ -240,17 +244,9 @@ export async function consumeProxyStream({
                   ...session.state,
                   ...envelope.state,
                 },
-                messages: session.messages.map((message) =>
-                  message.id === streamMessageId
-                    ? {
-                        ...message,
-                        // Use finalText if available to ensure output is correct and complete.
-                        // This overwrites any partial streaming text.
-                        text: envelope.finalText || message.text,
-                        timestamp: formatClock(),
-                        status: 'final',
-                      }
-                    : message,
+                messages: finalizeStreamMessage(
+                  session.messages,
+                  envelope.finalText,
                 ),
               };
             }),
@@ -279,16 +275,9 @@ export async function consumeProxyStream({
                 ...session.state,
                 ...envelope.state,
               },
-              messages: session.messages.map((message) =>
-                message.id === streamMessageId
-                  ? {
-                      ...message,
-                      // Use finalText if available to ensure output is correct and complete.
-                      text: envelope.finalText || message.text,
-                      timestamp: formatClock(),
-                      status: 'final',
-                    }
-                  : message,
+              messages: finalizeStreamMessage(
+                session.messages,
+                envelope.finalText,
               ),
             };
           }),

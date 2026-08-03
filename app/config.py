@@ -125,7 +125,7 @@ def load_runtime_config() -> AppRuntimeConfig:
         audit_retention_days=int(os.getenv("AUDIT_RETENTION_DAYS", "365")),
         audit_hash_salt=os.getenv("AUDIT_HASH_SALT", "dev-only-change-me"),
         pii_redaction_enabled=_parse_bool_env("PII_REDACTION_ENABLED", True),
-        max_output_tokens=int(os.getenv("MAX_OUTPUT_TOKENS", "2048")),
+        max_output_tokens=int(os.getenv("MAX_OUTPUT_TOKENS", "8192")),
         enable_cloud_tracing=_parse_bool_env("ENABLE_CLOUD_TRACING", False),
         enable_cloud_logging=_parse_bool_env("ENABLE_CLOUD_LOGGING", False),
         otel_service_name=os.getenv(
